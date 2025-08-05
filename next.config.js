@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['node-pty'],
-  },
+  serverExternalPackages: ['node-pty'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
