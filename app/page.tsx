@@ -7,11 +7,13 @@ import TerminalPanel from '@/components/TerminalPanel';
 import FileExplorer from '@/components/FileExplorer';
 import AgentPanel from '@/components/AgentPanel';
 import StatusBar from '@/components/StatusBar';
+import AISettings from '@/components/AISettings';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('editor');
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [agentStatus, setAgentStatus] = useState('disconnected');
+  const [showAISettings, setShowAISettings] = useState(false);
 
   useEffect(() => {
     // Initialize agent connection
@@ -94,7 +96,10 @@ export default function Home() {
             <span>{isAutoMode ? 'Stop Auto' : 'Start Auto'}</span>
           </button>
           
-          <button className="p-2 rounded-md hover:bg-accent">
+          <button 
+            onClick={() => setShowAISettings(true)}
+            className="p-2 rounded-md hover:bg-accent"
+          >
             <Settings className="h-4 w-4" />
           </button>
         </div>
@@ -139,6 +144,12 @@ export default function Home() {
 
       {/* Status Bar */}
       <StatusBar isAutoMode={isAutoMode} agentStatus={agentStatus} />
+
+      {/* AI Settings Modal */}
+      <AISettings 
+        isOpen={showAISettings} 
+        onClose={() => setShowAISettings(false)} 
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { OllamaService, OllamaMessage } from './ollama';
+import { aiProviderManager, AIMessage } from './ai-providers';
 import { FileSystemService } from './file-system';
 import { TerminalService, CommandResult } from './terminal';
 import { EventEmitter } from 'events';
@@ -22,7 +22,6 @@ export interface AgentState {
 }
 
 export class DevAIAgent extends EventEmitter {
-  private ollamaService: OllamaService;
   private fileSystemService: FileSystemService;
   private terminalService: TerminalService;
   private state: AgentState;
@@ -31,7 +30,6 @@ export class DevAIAgent extends EventEmitter {
 
   constructor() {
     super();
-    this.ollamaService = new OllamaService();
     this.fileSystemService = new FileSystemService();
     this.terminalService = new TerminalService();
     
@@ -53,10 +51,10 @@ export class DevAIAgent extends EventEmitter {
 
   async initialize(): Promise<void> {
     try {
-      // Check Ollama connection
-      const isConnected = await this.ollamaService.checkConnection();
+      // Check AI provider connection
+      const isConnected = await aiProviderManager.checkConnection();
       if (!isConnected) {
-        throw new Error('Ollama is not running. Please start Ollama first.');
+        throw new Error('AI provider is not connected. Please check your configuration.');
       }
 
       // Get system information
@@ -133,7 +131,7 @@ export class DevAIAgent extends EventEmitter {
     try {
       const context = await this.buildContext();
       
-      const messages: OllamaMessage[] = [
+      const messages: AIMessage[] = [
         {
           role: 'system',
           content: `You are DevAI, an autonomous coding agent. Analyze the current workspace and suggest the next action to take. You can:
@@ -158,10 +156,10 @@ Respond with a JSON object containing:
         }
       ];
 
-      const response = await this.ollamaService.generateResponse(messages);
+      const response = await aiProviderManager.generateResponse(messages);
       
       try {
-        const action = JSON.parse(response.message.content);
+        const action = JSON.parse(response.content);
         await this.addTask({
           type: action.action as any,
           description: action.description,
@@ -221,7 +219,7 @@ Respond with a JSON object containing:
   private async executeCodeTask(task: AgentTask): Promise<any> {
     const context = await this.buildContext();
     
-    const messages: OllamaMessage[] = [
+    const messages: AIMessage[] = [
       {
         role: 'system',
         content: `You are a coding assistant. Generate code based on the task description. Consider the current workspace structure and available tools.
@@ -243,8 +241,8 @@ Respond with the code directly, no explanations unless specifically requested.`
       }
     ];
 
-    const response = await this.ollamaService.generateResponse(messages);
-    return { generatedCode: response.message.content };
+    const response = await aiProviderManager.generateResponse(messages);
+    return { generatedCode: response.content };
   }
 
   private async executeCommandTask(task: AgentTask): Promise<CommandResult> {
@@ -261,7 +259,7 @@ Respond with the code directly, no explanations unless specifically requested.`
   private async executeFileTask(task: AgentTask): Promise<any> {
     const context = await this.buildContext();
     
-    const messages: OllamaMessage[] = [
+    const messages: AIMessage[] = [
       {
         role: 'system',
         content: `You are a file management assistant. Perform file operations based on the task description.
@@ -283,10 +281,10 @@ Respond with a JSON object containing the file operation details.`
       }
     ];
 
-    const response = await this.ollamaService.generateResponse(messages);
+    const response = await aiProviderManager.generateResponse(messages);
     
     try {
-      const operation = JSON.parse(response.message.content);
+      const operation = JSON.parse(response.content);
       
       switch (operation.action) {
         case 'read':
@@ -307,7 +305,7 @@ Respond with a JSON object containing the file operation details.`
   private async executeAnalysisTask(task: AgentTask): Promise<any> {
     const context = await this.buildContext();
     
-    const messages: OllamaMessage[] = [
+    const messages: AIMessage[] = [
       {
         role: 'system',
         content: `You are a code analysis assistant. Analyze the current workspace and provide insights, suggestions, or identify issues.
@@ -328,8 +326,8 @@ Provide a comprehensive analysis including:
       }
     ];
 
-    const response = await this.ollamaService.generateResponse(messages);
-    return { analysis: response.message.content };
+    const response = await aiProviderManager.generateResponse(messages);
+    return { analysis: response.content };
   }
 
   getState(): AgentState {

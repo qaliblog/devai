@@ -10,14 +10,15 @@ interface StatusBarProps {
 
 export default function StatusBar({ isAutoMode, agentStatus }: StatusBarProps) {
   const [systemInfo, setSystemInfo] = useState<any>(null);
-  const [ollamaStatus, setOllamaStatus] = useState<string>('checking');
+  const [aiProviderStatus, setAiProviderStatus] = useState<string>('checking');
+  const [currentProvider, setCurrentProvider] = useState<string>('ollama');
 
   useEffect(() => {
     loadSystemInfo();
-    checkOllamaStatus();
+    checkAIProviderStatus();
     
     const interval = setInterval(() => {
-      checkOllamaStatus();
+      checkAIProviderStatus();
     }, 10000); // Check every 10 seconds
     
     return () => clearInterval(interval);
@@ -35,13 +36,14 @@ export default function StatusBar({ isAutoMode, agentStatus }: StatusBarProps) {
     }
   };
 
-  const checkOllamaStatus = async () => {
+  const checkAIProviderStatus = async () => {
     try {
-      const response = await fetch('/api/ollama?action=check-connection');
+      const response = await fetch('/api/ai-providers?action=status');
       const data = await response.json();
-      setOllamaStatus(data.connected ? 'connected' : 'disconnected');
+      setAiProviderStatus(data.connected ? 'connected' : 'disconnected');
+      setCurrentProvider(data.provider);
     } catch (error) {
-      setOllamaStatus('error');
+      setAiProviderStatus('error');
     }
   };
 
@@ -79,13 +81,13 @@ export default function StatusBar({ isAutoMode, agentStatus }: StatusBarProps) {
           </div>
         )}
 
-        {/* Ollama Status */}
+        {/* AI Provider Status */}
         <div className="flex items-center space-x-1">
           <Wifi className="h-3 w-3" />
-          <span>Ollama:</span>
-          <span className={getStatusColor(ollamaStatus)}>
-            {ollamaStatus === 'connected' ? 'Connected' : 
-             ollamaStatus === 'disconnected' ? 'Disconnected' : 'Error'}
+          <span>{currentProvider}:</span>
+          <span className={getStatusColor(aiProviderStatus)}>
+            {aiProviderStatus === 'connected' ? 'Connected' : 
+             aiProviderStatus === 'disconnected' ? 'Disconnected' : 'Error'}
           </span>
         </div>
       </div>
