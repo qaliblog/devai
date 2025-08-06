@@ -21,7 +21,11 @@ interface AgentState {
   systemInfo: any;
 }
 
-export default function AgentPanel() {
+interface AgentPanelProps {
+  workspaceId?: string;
+}
+
+export default function AgentPanel({ workspaceId }: AgentPanelProps) {
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [newTask, setNewTask] = useState('');
@@ -73,6 +77,7 @@ export default function AgentPanel() {
           action: 'add-task',
           type: selectedTaskType,
           description: newTask,
+          workspaceId,
         }),
       });
       

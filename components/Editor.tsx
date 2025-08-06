@@ -14,9 +14,11 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ),
 });
 
-interface EditorProps {}
+interface EditorProps {
+  workspaceId?: string;
+}
 
-export default function Editor({}: EditorProps) {
+export default function Editor({ workspaceId }: EditorProps) {
   const [code, setCode] = useState('// Welcome to DevAI\n// Start coding here...');
   const [language, setLanguage] = useState('javascript');
   const [theme, setTheme] = useState('vs-dark');
@@ -56,6 +58,7 @@ export default function Editor({}: EditorProps) {
           action: 'write',
           path: currentFile,
           content: code,
+          workspaceId,
         }),
       });
 
@@ -74,7 +77,7 @@ export default function Editor({}: EditorProps) {
     if (!filename) return;
 
     try {
-      const response = await fetch(`/api/files?action=read&path=${encodeURIComponent(filename)}`);
+      const response = await fetch(`/api/files?action=read&path=${encodeURIComponent(filename)}&workspaceId=${workspaceId || 'default'}`);
       const data = await response.json();
       
       if (data.success) {

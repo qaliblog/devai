@@ -69,10 +69,10 @@ export default function Home() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background mobile-layout">
       {/* Header */}
       <header className="mobile-header flex items-center justify-between p-4 border-b border-border bg-card">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowMobileSidebar(!showMobileSidebar)}
             className="sm:hidden p-2 rounded-md hover:bg-accent"
@@ -84,7 +84,9 @@ export default function Home() {
             <h1 className="text-xl font-bold">DevAI</h1>
           </div>
           <WorkspaceSelector onWorkspaceChange={handleWorkspaceChange} />
-          
+        </div>
+        
+        <div className="flex items-center space-x-2">
           <div className="hidden sm:flex items-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${
               agentStatus === 'connected' ? 'bg-green-500' : 
@@ -95,7 +97,6 @@ export default function Home() {
                agentStatus === 'error' ? 'Error' : 'Connecting...'}
             </span>
           </div>
-        </div>
 
         <div className="flex items-center space-x-2">
           <button
@@ -130,7 +131,7 @@ export default function Home() {
         )}
 
         {/* Sidebar */}
-        <div className={`mobile-sidebar ${showMobileSidebar ? 'open' : ''} w-64 border-r border-border bg-card`}>
+        <div className={`mobile-sidebar ${showMobileSidebar ? 'open' : ''} w-64 border-r border-border bg-card mobile-hidden sm:block`}>
           <div className="p-4">
             <h2 className="text-sm font-semibold text-muted-foreground mb-4">NAVIGATION</h2>
             <nav className="space-y-1">
@@ -159,9 +160,9 @@ export default function Home() {
         </div>
 
         {/* Main Panel */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col mobile-main">
           {/* Mobile Tab Navigation */}
-          <div className="sm:hidden border-b border-border bg-card">
+          <div className="sm:hidden">
             <div className="flex overflow-x-auto mobile-tabs">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -169,7 +170,7 @@ export default function Home() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`mobile-tab flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
+                    className={`mobile-tab flex items-center justify-center space-x-2 transition-colors ${
                       activeTab === tab.id
                         ? 'bg-primary text-primary-foreground'
                         : 'hover:bg-accent'
@@ -184,7 +185,7 @@ export default function Home() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden mobile-panel">
             {activeTab === 'editor' && <Editor workspaceId={activeWorkspaceId} />}
             {activeTab === 'terminal' && <TerminalPanel workspaceId={activeWorkspaceId} />}
             {activeTab === 'files' && <FileExplorer workspaceId={activeWorkspaceId} />}

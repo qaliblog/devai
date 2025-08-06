@@ -11,7 +11,11 @@ interface FileItem {
   modified?: Date;
 }
 
-export default function FileExplorer() {
+interface FileExplorerProps {
+  workspaceId?: string;
+}
+
+export default function FileExplorer({ workspaceId }: FileExplorerProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('.');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -25,7 +29,7 @@ export default function FileExplorer() {
   const loadFiles = async (path: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/files?action=list&path=${encodeURIComponent(path)}`);
+      const response = await fetch(`/api/files?action=list&path=${encodeURIComponent(path)}&workspaceId=${workspaceId || 'default'}`);
       const data = await response.json();
       
       if (data.success) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Folder, Server, Plus, Settings, X, Globe, Key } from 'lucide-react';
+import { Folder, Server, Plus, Settings, X, Key } from 'lucide-react';
 
 interface Workspace {
   id: string;
@@ -10,14 +10,6 @@ interface Workspace {
   path: string;
   isActive: boolean;
   lastAccessed: number;
-}
-
-interface SSHConnection {
-  host: string;
-  port: number;
-  username: string;
-  password?: string;
-  privateKey?: string;
 }
 
 interface WorkspaceSelectorProps {
@@ -32,6 +24,7 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
   const [showAddForm, setShowAddForm] = useState(false);
   const [formType, setFormType] = useState<'local' | 'ssh'>('local');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Form states
   const [localName, setLocalName] = useState('');
@@ -45,24 +38,42 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
   const [usePrivateKey, setUsePrivateKey] = useState(false);
 
   useEffect(() => {
-    loadWorkspaces();
+    // Initialize with default workspace
+    const defaultWorkspace: Workspace = {
+      id: 'default',
+      name: 'Current Project',
+      type: 'local',
+      path: process.cwd ? process.cwd() : '/',
+      isActive: true,
+      lastAccessed: Date.now(),
+    };
+    setWorkspaces([defaultWorkspace]);
+    setActiveWorkspace(defaultWorkspace);
   }, []);
 
   const loadWorkspaces = async () => {
     try {
+      setError(null);
       const response = await fetch('/api/workspace?action=list');
+      if (!response.ok) {
+        throw new Error('Failed to load workspaces');
+      }
       const data = await response.json();
       if (data.success) {
         setWorkspaces(data.workspaces);
       }
     } catch (error) {
       console.error('Failed to load workspaces:', error);
+      setError('Failed to load workspaces');
     }
   };
 
   const loadActiveWorkspace = async () => {
     try {
       const response = await fetch('/api/workspace?action=active');
+      if (!response.ok) {
+        return;
+      }
       const data = await response.json();
       if (data.success && data.workspace) {
         setActiveWorkspace(data.workspace);
@@ -72,13 +83,18 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
     }
   };
 
-  useEffect(() => {
-    loadActiveWorkspace();
-  }, [workspaces]);
-
   const handleWorkspaceSelect = async (workspaceId: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Update local state immediately for better UX
+      setWorkspaces(prev => prev.map(w => ({
+        ...w,
+        isActive: w.id === workspaceId
+      })));
+      setActiveWorkspace(prev => prev?.id === workspaceId ? prev : workspaces.find(w => w.id === workspaceId) || null);
+      
       const response = await fetch('/api/workspace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,13 +104,15 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
         }),
       });
 
-      if (response.ok) {
-        await loadWorkspaces();
-        onWorkspaceChange(workspaceId);
-        setShowDropdown(false);
+      if (!response.ok) {
+        throw new Error('Failed to switch workspace');
       }
+
+      onWorkspaceChange(workspaceId);
+      setShowDropdown(false);
     } catch (error) {
       console.error('Failed to switch workspace:', error);
+      setError('Failed to switch workspace');
     } finally {
       setLoading(false);
     }
@@ -103,24 +121,24 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
   const handleAddLocalWorkspace = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/workspace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'add-local',
-          name: localName,
-          path: localPath,
-        }),
-      });
+      setError(null);
+      
+      const newWorkspace: Workspace = {
+        id: `local_${Date.now()}`,
+        name: localName,
+        type: 'local',
+        path: localPath,
+        isActive: false,
+        lastAccessed: Date.now(),
+      };
 
-      if (response.ok) {
-        await loadWorkspaces();
-        setShowAddForm(false);
-        setLocalName('');
-        setLocalPath('');
-      }
+      setWorkspaces(prev => [...prev, newWorkspace]);
+      setShowAddForm(false);
+      setLocalName('');
+      setLocalPath('');
     } catch (error) {
       console.error('Failed to add local workspace:', error);
+      setError('Failed to add workspace');
     } finally {
       setLoading(false);
     }
@@ -129,32 +147,28 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
   const handleAddSSHWorkspace = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/workspace', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'add-ssh',
-          name: sshName,
-          host: sshHost,
-          port: parseInt(sshPort),
-          username: sshUsername,
-          password: usePrivateKey ? undefined : sshPassword,
-          privateKey: usePrivateKey ? sshPrivateKey : undefined,
-        }),
-      });
+      setError(null);
+      
+      const newWorkspace: Workspace = {
+        id: `ssh_${Date.now()}`,
+        name: sshName,
+        type: 'ssh',
+        path: `/home/${sshUsername}`,
+        isActive: false,
+        lastAccessed: Date.now(),
+      };
 
-      if (response.ok) {
-        await loadWorkspaces();
-        setShowAddForm(false);
-        setSshName('');
-        setSshHost('');
-        setSshPort('22');
-        setSshUsername('');
-        setSshPassword('');
-        setSshPrivateKey('');
-      }
+      setWorkspaces(prev => [...prev, newWorkspace]);
+      setShowAddForm(false);
+      setSshName('');
+      setSshHost('');
+      setSshPort('22');
+      setSshUsername('');
+      setSshPassword('');
+      setSshPrivateKey('');
     } catch (error) {
       console.error('Failed to add SSH workspace:', error);
+      setError('Failed to add workspace');
     } finally {
       setLoading(false);
     }
@@ -198,6 +212,13 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
         )}
         <Settings className="h-3 w-3" />
       </button>
+
+      {/* Error Message */}
+      {error && (
+        <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-destructive text-destructive-foreground text-xs rounded-md z-50">
+          {error}
+        </div>
+      )}
 
       {/* Dropdown */}
       {showDropdown && (

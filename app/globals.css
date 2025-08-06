@@ -87,6 +87,8 @@
     height: 100vh;
     z-index: 50;
     transition: left 0.3s ease;
+    background: hsl(var(--background));
+    border-right: 1px solid hsl(var(--border));
   }
   
   .mobile-sidebar.open {
@@ -106,10 +108,12 @@
   .mobile-header {
     height: 60px;
     padding: 0 16px;
+    min-height: 60px;
   }
   
   .mobile-content {
     height: calc(100vh - 60px);
+    overflow: hidden;
   }
   
   .mobile-tabs {
@@ -117,6 +121,8 @@
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    background: hsl(var(--card));
+    border-bottom: 1px solid hsl(var(--border));
   }
   
   .mobile-tabs::-webkit-scrollbar {
@@ -125,8 +131,27 @@
   
   .mobile-tab {
     flex-shrink: 0;
-    padding: 8px 16px;
+    padding: 12px 16px;
     white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+  }
+  
+  /* Mobile-specific layout adjustments */
+  .mobile-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .mobile-main {
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .mobile-panel {
+    height: 100%;
+    overflow: hidden;
   }
 }
 
