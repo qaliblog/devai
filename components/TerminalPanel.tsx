@@ -209,9 +209,9 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-2 border-b border-border bg-card">
+      <div className="flex items-center justify-between p-2 border-b border-border bg-card flex-shrink-0 terminal-toolbar">
         <div className="flex items-center space-x-2">
           <h2 className="text-sm font-semibold">Terminal</h2>
           {currentDirectory && (
@@ -257,13 +257,13 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
       {/* Output */}
       <div 
         ref={outputRef}
-        className="flex-1 p-4 overflow-y-auto font-mono text-sm bg-background"
+        className="flex-1 p-4 overflow-y-auto font-mono text-sm bg-background min-h-0"
       >
         {processes.map((process) => (
-          <div key={process.id} className="mb-4">
+          <div key={process.id} className="mb-4 terminal-process">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <span className="text-primary font-semibold">$ {process.command}</span>
+                <span className="text-primary font-semibold terminal-command">$ {process.command}</span>
                 <span className={`px-2 py-1 rounded text-xs ${
                   process.status === 'running' ? 'bg-yellow-500/20 text-yellow-600' :
                   process.status === 'completed' ? 'bg-green-500/20 text-green-600' :
@@ -288,7 +288,7 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
               {process.output.map((output, index) => (
                 <div
                   key={index}
-                  className={`whitespace-pre-wrap ${getOutputClass(output.type)}`}
+                  className={`whitespace-pre-wrap terminal-output ${getOutputClass(output.type)}`}
                 >
                   {output.data}
                 </div>
@@ -305,7 +305,7 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
       </div>
 
       {/* Command Input */}
-      <div className="p-4 border-t border-border bg-card mobile-terminal-input">
+      <div className="p-4 border-t border-border bg-card mobile-terminal-input flex-shrink-0">
         <form onSubmit={handleSubmit} className="flex items-center space-x-2">
           <span className="text-primary font-semibold text-sm">$</span>
           <input
@@ -314,7 +314,7 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
             onChange={(e) => setCurrentCommand(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter command..."
-            className="flex-1 bg-transparent border-none outline-none text-foreground text-sm"
+            className="flex-1 bg-transparent border-none outline-none text-foreground text-sm terminal-input"
             disabled={isExecuting}
           />
           <button

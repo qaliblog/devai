@@ -263,7 +263,7 @@ export class GeminiProvider implements AIProvider {
   async generateResponse(messages: AIMessage[], options: any = {}): Promise<AIResponse> {
     try {
       const model = options.model || 'gemini-pro';
-      const url = `${this.baseUrl}/models/${model}:generateContent?key=${this.apiKey}`;
+      const url = `${this.baseUrl}/models/${model}:generateContent`;
 
       // Convert messages to Gemini format
       const geminiMessages = messages.map(msg => ({
@@ -277,6 +277,14 @@ export class GeminiProvider implements AIProvider {
           temperature: options.temperature || 0.7,
           topP: options.top_p || 1,
           maxOutputTokens: options.max_tokens || 4096,
+        },
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey,
+        },
+        params: {
+          key: this.apiKey,
         },
       });
 
@@ -303,7 +311,10 @@ export class GeminiProvider implements AIProvider {
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': this.apiKey,
+        },
         body: JSON.stringify({
           contents: geminiMessages,
           generationConfig: {
@@ -355,8 +366,15 @@ export class GeminiProvider implements AIProvider {
 
   async checkConnection(): Promise<boolean> {
     try {
-      const url = `${this.baseUrl}/models?key=${this.apiKey}`;
-      await axios.get(url);
+      const url = `${this.baseUrl}/models`;
+      await axios.get(url, {
+        headers: {
+          'x-goog-api-key': this.apiKey,
+        },
+        params: {
+          key: this.apiKey,
+        },
+      });
       return true;
     } catch (error) {
       return false;
@@ -365,8 +383,15 @@ export class GeminiProvider implements AIProvider {
 
   async listModels(): Promise<string[]> {
     try {
-      const url = `${this.baseUrl}/models?key=${this.apiKey}`;
-      const response = await axios.get(url);
+      const url = `${this.baseUrl}/models`;
+      const response = await axios.get(url, {
+        headers: {
+          'x-goog-api-key': this.apiKey,
+        },
+        params: {
+          key: this.apiKey,
+        },
+      });
       return response.data.models
         .filter((model: any) => model.name.includes('gemini'))
         .map((model: any) => model.name);
