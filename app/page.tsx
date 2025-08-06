@@ -98,7 +98,6 @@ export default function Home() {
             </span>
           </div>
 
-        <div className="flex items-center space-x-2">
           <button
             onClick={handleAutoModeToggle}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
