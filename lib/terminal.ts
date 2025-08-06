@@ -1,5 +1,7 @@
 import { spawn, exec } from 'child_process';
 import { EventEmitter } from 'events';
+import { workspaceManager } from './workspace';
+import { sshService } from './ssh';
 
 export interface TerminalOutput {
   type: 'stdout' | 'stderr' | 'exit';
@@ -13,11 +15,13 @@ export interface CommandResult {
   stderr: string;
   exitCode: number;
   duration: number;
+  workspaceId?: string;
 }
 
 export class TerminalService extends EventEmitter {
   private processes: Map<string, any> = new Map();
   private outputHistory: Map<string, TerminalOutput[]> = new Map();
+  private activeWorkspaceId: string | null = null;
 
   async executeCommand(
     command: string,
@@ -26,6 +30,28 @@ export class TerminalService extends EventEmitter {
       timeout?: number;
       env?: Record<string, string>;
       shell?: boolean;
+      workspaceId?: string;
+    } = {}
+  ): Promise<CommandResult> {
+    const workspace = options.workspaceId ? 
+      workspaceManager.getWorkspace(options.workspaceId) : 
+      workspaceManager.getActiveWorkspace();
+
+    if (workspace && workspace.type === 'ssh') {
+      return this.executeSSHCommand(workspace, command, options);
+    } else {
+      return this.executeLocalCommand(command, options);
+    }
+  }
+
+  private async executeLocalCommand(
+    command: string,
+    options: {
+      cwd?: string;
+      timeout?: number;
+      env?: Record<string, string>;
+      shell?: boolean;
+      workspaceId?: string;
     } = {}
   ): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
@@ -34,8 +60,14 @@ export class TerminalService extends EventEmitter {
       let stderr = '';
       let killed = false;
 
+      const workspace = options.workspaceId ? 
+        workspaceManager.getWorkspace(options.workspaceId) : 
+        workspaceManager.getActiveWorkspace();
+
+      const cwd = options.cwd || (workspace ? workspace.path : process.cwd());
+
       const process = spawn(command, [], {
-        cwd: options.cwd || process.cwd(),
+        cwd,
         env: { ...process.env, ...options.env },
         shell: options.shell !== false,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -83,12 +115,17 @@ export class TerminalService extends EventEmitter {
         
         this.processes.delete(processId);
         
+        const workspace = options.workspaceId ? 
+          workspaceManager.getWorkspace(options.workspaceId) : 
+          workspaceManager.getActiveWorkspace();
+        
         resolve({
           success: code === 0,
           stdout,
           stderr,
           exitCode: code || 0,
           duration,
+          workspaceId: workspace?.id,
         });
       });
 
@@ -204,6 +241,101 @@ export class TerminalService extends EventEmitter {
     }
     
     return available;
+  }
+
+  private async executeSSHCommand(
+    workspace: any,
+    command: string,
+    options: {
+      cwd?: string;
+      timeout?: number;
+      env?: Record<string, string>;
+      shell?: boolean;
+      workspaceId?: string;
+    } = {}
+  ): Promise<CommandResult> {
+    if (!workspace.sshConnection) {
+      throw new Error('SSH connection not available');
+    }
+
+    const startTime = Date.now();
+    
+    try {
+      const sshCommand = await sshService.executeCommand(workspace.sshConnection.id, command);
+      
+      const duration = Date.now() - startTime;
+      
+      return {
+        success: sshCommand.exitCode === 0,
+        stdout: sshCommand.output,
+        stderr: '',
+        exitCode: sshCommand.exitCode,
+        duration,
+        workspaceId: workspace.id,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      return {
+        success: false,
+        stdout: '',
+        stderr: error.message,
+        exitCode: -1,
+        duration,
+        workspaceId: workspace.id,
+      };
+    }
+  }
+
+  setActiveWorkspace(workspaceId: string): void {
+    this.activeWorkspaceId = workspaceId;
+  }
+
+  getActiveWorkspaceId(): string | null {
+    return this.activeWorkspaceId;
+  }
+
+  async getCurrentDirectory(workspaceId?: string): Promise<string> {
+    const workspace = workspaceId ? 
+      workspaceManager.getWorkspace(workspaceId) : 
+      workspaceManager.getActiveWorkspace();
+
+    if (!workspace) {
+      return process.cwd();
+    }
+
+    if (workspace.type === 'ssh') {
+      if (!workspace.sshConnection) {
+        throw new Error('SSH connection not available');
+      }
+      
+      const result = await sshService.executeCommand(workspace.sshConnection.id, 'pwd');
+      return result.output.trim();
+    } else {
+      return workspace.path;
+    }
+  }
+
+  async changeDirectory(path: string, workspaceId?: string): Promise<void> {
+    const workspace = workspaceId ? 
+      workspaceManager.getWorkspace(workspaceId) : 
+      workspaceManager.getActiveWorkspace();
+
+    if (!workspace) {
+      throw new Error('No active workspace available');
+    }
+
+    if (workspace.type === 'ssh') {
+      if (!workspace.sshConnection) {
+        throw new Error('SSH connection not available');
+      }
+      
+      await sshService.executeCommand(workspace.sshConnection.id, `cd "${path}" && pwd`);
+    } else {
+      // For local workspace, we can't change the working directory of the process
+      // but we can update the workspace path
+      workspace.path = path;
+    }
   }
 }
 

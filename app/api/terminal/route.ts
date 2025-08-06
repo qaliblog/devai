@@ -24,6 +24,11 @@ export async function GET(request: NextRequest) {
         const exists = await terminalService.checkCommandExists(command);
         return NextResponse.json({ success: true, exists });
 
+      case 'current-directory':
+        const workspaceId = searchParams.get('workspaceId');
+        const directory = await terminalService.getCurrentDirectory(workspaceId);
+        return NextResponse.json({ success: true, directory });
+
       default:
         return NextResponse.json(
           { error: 'Unknown action' },
@@ -52,6 +57,7 @@ export async function POST(request: NextRequest) {
             timeout: params.timeout,
             env: params.env,
             shell: params.shell,
+            workspaceId: params.workspaceId,
           }
         );
         return NextResponse.json({ success: true, result });

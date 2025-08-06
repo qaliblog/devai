@@ -9,8 +9,11 @@ DevAI is a Cursor-like coding agent that connects to Ollama with DeepSeek Coder 
 - 💻 **Terminal Integration**: Execute commands directly in the environment
 - 📁 **File Management**: Browse, read, write, and manage files
 - 🎨 **Modern UI**: Beautiful, responsive interface with dark/light themes
+- 📱 **Mobile-Friendly**: Responsive design that works on desktop and mobile devices
 - 🌐 **Cross-Platform**: Works on Linux, Windows, and Termux
 - ⚡ **Real-time Updates**: Live terminal output and file system monitoring
+- 🔗 **SSH Support**: Connect to remote servers and work on remote projects
+- 📂 **Workspace Management**: Support for local and SSH workspaces
 
 ## Prerequisites
 
@@ -102,6 +105,45 @@ When Auto Mode is enabled, the agent will:
 3. **Execute commands** to build, test, or deploy
 4. **Write or modify code** files as needed
 5. **Continue the cycle** until objectives are met
+
+### Workspace Management
+
+DevAI supports both local and SSH workspaces:
+
+#### Local Workspaces
+- Work with files in your local filesystem
+- Default workspace is the current project directory
+- Add additional local workspaces for different projects
+
+#### SSH Workspaces
+- Connect to remote servers via SSH
+- Work on remote projects seamlessly
+- Support for password and private key authentication
+- Execute commands on remote servers
+
+#### Adding Workspaces
+1. Click the workspace selector in the header
+2. Choose "Add Workspace"
+3. Select Local or SSH workspace type
+4. For SSH: Enter host, port, username, and authentication details
+5. The workspace will be available for immediate use
+
+### Mobile Support
+
+DevAI is fully responsive and works on mobile devices:
+
+#### Mobile Features
+- **Responsive Design**: Adapts to different screen sizes
+- **Touch-Friendly**: Optimized for touch interactions
+- **Mobile Navigation**: Collapsible sidebar and tab navigation
+- **Mobile Terminal**: Optimized terminal interface for mobile
+- **Workspace Management**: Full workspace support on mobile
+
+#### Mobile Usage
+- Access via mobile browser at `http://your-ip:3000`
+- Use the hamburger menu for navigation
+- Terminal commands work on mobile devices
+- SSH connections work from mobile devices
 
 ### Task Types
 

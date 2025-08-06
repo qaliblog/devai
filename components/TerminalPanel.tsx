@@ -16,12 +16,18 @@ interface Process {
   output: TerminalOutput[];
 }
 
-export default function TerminalPanel() {
+interface TerminalPanelProps {
+  className?: string;
+  workspaceId?: string;
+}
+
+export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [currentCommand, setCurrentCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [currentDirectory, setCurrentDirectory] = useState<string>('');
   const outputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,6 +49,26 @@ export default function TerminalPanel() {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
   }, [processes]);
+
+  useEffect(() => {
+    // Load current directory
+    loadCurrentDirectory();
+  }, [workspaceId]);
+
+  const loadCurrentDirectory = async () => {
+    try {
+      const response = await fetch('/api/terminal?action=current-directory', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCurrentDirectory(data.directory);
+      }
+    } catch (error) {
+      console.error('Failed to load current directory:', error);
+    }
+  };
 
   const executeCommand = async (command: string) => {
     if (!command.trim()) return;
@@ -68,6 +94,7 @@ export default function TerminalPanel() {
         body: JSON.stringify({
           action: 'execute',
           command,
+          workspaceId,
         }),
       });
 
@@ -187,9 +214,16 @@ export default function TerminalPanel() {
       <div className="flex items-center justify-between p-2 border-b border-border bg-card">
         <div className="flex items-center space-x-2">
           <h2 className="text-sm font-semibold">Terminal</h2>
+          {currentDirectory && (
+            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+              <Folder className="h-3 w-3" />
+              <span className="hidden sm:inline">{currentDirectory}</span>
+              <span className="sm:hidden">{currentDirectory.split('/').pop() || currentDirectory}</span>
+            </div>
+          )}
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <button
             onClick={clearOutput}
             className="p-2 hover:bg-accent rounded"
@@ -206,15 +240,15 @@ export default function TerminalPanel() {
             <Copy className="h-4 w-4" />
           </button>
           
-          <button className="p-2 hover:bg-accent rounded" title="Download Output">
+          <button className="p-2 hover:bg-accent rounded hidden sm:block" title="Download Output">
             <Download className="h-4 w-4" />
           </button>
           
-          <button className="p-2 hover:bg-accent rounded" title="Upload Script">
+          <button className="p-2 hover:bg-accent rounded hidden sm:block" title="Upload Script">
             <Upload className="h-4 w-4" />
           </button>
           
-          <button className="p-2 hover:bg-accent rounded" title="Settings">
+          <button className="p-2 hover:bg-accent rounded hidden sm:block" title="Settings">
             <Settings className="h-4 w-4" />
           </button>
         </div>
@@ -271,16 +305,16 @@ export default function TerminalPanel() {
       </div>
 
       {/* Command Input */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-4 border-t border-border bg-card mobile-terminal-input">
         <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          <span className="text-primary font-semibold">$</span>
+          <span className="text-primary font-semibold text-sm">$</span>
           <input
             type="text"
             value={currentCommand}
             onChange={(e) => setCurrentCommand(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter command..."
-            className="flex-1 bg-transparent border-none outline-none text-foreground"
+            className="flex-1 bg-transparent border-none outline-none text-foreground text-sm"
             disabled={isExecuting}
           />
           <button
