@@ -122,20 +122,20 @@ export class TerminalService extends EventEmitter {
         spawnOptions.shell = true;
       }
 
-      let process;
+      let childProcess;
       if (spawnOptions.shell || needsShell) {
         // Use shell for complex commands or when explicitly requested
-        process = spawn(actualCommand, [], spawnOptions);
+        childProcess = spawn(actualCommand, [], spawnOptions);
       } else {
         // Parse command and arguments for simple commands
         const cmdParts = actualCommand.trim().split(/\s+/);
         const cmd = cmdParts[0];
         const args = cmdParts.slice(1);
-        process = spawn(cmd, args, spawnOptions);
+        childProcess = spawn(cmd, args, spawnOptions);
       }
 
-      const processId = process.pid?.toString() || Date.now().toString();
-      this.processes.set(processId, process);
+      const processId = childProcess.pid?.toString() || Date.now().toString();
+      this.processes.set(processId, childProcess);
       this.outputHistory.set(processId, []);
 
       const addOutput = (type: 'stdout' | 'stderr', data: string) => {
@@ -155,15 +155,15 @@ export class TerminalService extends EventEmitter {
         }
       };
 
-      process.stdout?.on('data', (data) => {
+      childProcess.stdout?.on('data', (data) => {
         addOutput('stdout', data.toString());
       });
 
-      process.stderr?.on('data', (data) => {
+      childProcess.stderr?.on('data', (data) => {
         addOutput('stderr', data.toString());
       });
 
-      process.on('close', (code) => {
+      childProcess.on('close', (code) => {
         const duration = Date.now() - startTime;
         const exitOutput: TerminalOutput = {
           type: 'exit',
@@ -190,7 +190,7 @@ export class TerminalService extends EventEmitter {
         });
       });
 
-      process.on('error', (error) => {
+      childProcess.on('error', (error) => {
         const duration = Date.now() - startTime;
         this.processes.delete(processId);
         reject({
@@ -204,12 +204,12 @@ export class TerminalService extends EventEmitter {
 
       if (options.timeout) {
         setTimeout(() => {
-          if (!killed && process.pid) {
+          if (!killed && childProcess.pid) {
             killed = true;
-            process.kill('SIGTERM');
+            childProcess.kill('SIGTERM');
             setTimeout(() => {
-              if (process.pid) {
-                process.kill('SIGKILL');
+              if (childProcess.pid) {
+                childProcess.kill('SIGKILL');
               }
             }, 5000);
           }
