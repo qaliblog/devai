@@ -58,7 +58,16 @@ export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerPr
 
   const handleFileClick = (file: FileItem) => {
     if (file.isDirectory) {
-      setCurrentPath(file.path);
+      // Construct proper path for navigation
+      let newPath;
+      if (currentPath === '.') {
+        newPath = file.name;
+      } else if (currentPath.endsWith('/')) {
+        newPath = currentPath + file.name;
+      } else {
+        newPath = currentPath + '/' + file.name;
+      }
+      setCurrentPath(newPath);
       setSelectedFile(null);
     } else {
       setSelectedFile(file.path);
@@ -67,7 +76,16 @@ export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerPr
 
   const handleDoubleClick = (file: FileItem) => {
     if (file.isDirectory) {
-      setCurrentPath(file.path);
+      // Use same logic as handleFileClick for consistency
+      let newPath;
+      if (currentPath === '.') {
+        newPath = file.name;
+      } else if (currentPath.endsWith('/')) {
+        newPath = currentPath + file.name;
+      } else {
+        newPath = currentPath + '/' + file.name;
+      }
+      setCurrentPath(newPath);
     } else {
       // Open file in editor
       window.open(`/api/files?action=read&path=${encodeURIComponent(file.path)}`);
@@ -75,15 +93,32 @@ export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerPr
   };
 
   const navigateUp = () => {
-    if (currentPath === '.') return;
+    if (currentPath === '.' || currentPath === '') return;
     
-    const pathParts = currentPath.split('/').filter(Boolean);
-    if (pathParts.length > 0) {
-      pathParts.pop();
-      const newPath = pathParts.length > 0 ? pathParts.join('/') : '.';
-      setCurrentPath(newPath);
-    } else if (currentPath !== '.') {
-      setCurrentPath('.');
+    // Handle different path formats
+    let normalizedPath = currentPath;
+    
+    // Remove trailing slash if present
+    if (normalizedPath.endsWith('/') && normalizedPath !== '/') {
+      normalizedPath = normalizedPath.slice(0, -1);
+    }
+    
+    // Handle absolute paths
+    if (normalizedPath.startsWith('/')) {
+      const pathParts = normalizedPath.split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        pathParts.pop();
+        const newPath = pathParts.length > 0 ? '/' + pathParts.join('/') : '/';
+        setCurrentPath(newPath);
+      }
+    } else {
+      // Handle relative paths
+      const pathParts = normalizedPath.split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        pathParts.pop();
+        const newPath = pathParts.length > 0 ? pathParts.join('/') : '.';
+        setCurrentPath(newPath);
+      }
     }
   };
 
@@ -180,7 +215,7 @@ export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerPr
         <button
           onClick={navigateUp}
           className="mobile-button flex items-center space-x-1 px-2 py-1 rounded hover:bg-accent"
-          disabled={currentPath === '.'}
+          disabled={currentPath === '.' || currentPath === '' || currentPath === '/'}
           title="Go up one directory"
         >
           <ArrowUp className="h-4 w-4" />
@@ -198,7 +233,7 @@ export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerPr
         <div className="flex items-center space-x-2">
           <button
             onClick={navigateUp}
-            disabled={currentPath === '.'}
+            disabled={currentPath === '.' || currentPath === '' || currentPath === '/'}
             className="p-2 hover:bg-accent rounded disabled:opacity-50"
             title="Go Up"
           >

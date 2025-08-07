@@ -102,6 +102,9 @@ export class WorkspaceManager {
     workspace.isActive = true;
     workspace.lastAccessed = Date.now();
     this.activeWorkspaceId = workspaceId;
+    
+    // Notify terminal service of workspace change
+    terminalService.setActiveWorkspace(workspaceId);
   }
 
   getActiveWorkspace(): Workspace | null {
