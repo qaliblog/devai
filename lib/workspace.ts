@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { sshService, SSHConnection } from './ssh';
+import { terminalService } from './terminal';
 
 export interface Workspace {
   id: string;
