@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Brain, Play, Square, Clock, CheckCircle, XCircle, AlertCircle, Activity, Settings } from 'lucide-react';
 
 interface AgentTask {
@@ -30,12 +30,21 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [newTask, setNewTask] = useState('');
   const [selectedTaskType, setSelectedTaskType] = useState<'code' | 'command' | 'file' | 'analysis'>('code');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAgentState();
     const interval = setInterval(loadAgentState, 2000); // Refresh every 2 seconds
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-scroll to bottom when new tasks are added
+  useEffect(() => {
+    if (agentState && scrollContainerRef.current) {
+      const scrollContainer = scrollContainerRef.current;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+  }, [agentState?.taskHistory.length]);
 
   const loadAgentState = async () => {
     try {
@@ -249,7 +258,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       )}
 
       {/* Task History */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth">
         <div className="p-4">
           <h3 className="text-sm font-semibold mb-4">Task History</h3>
           
@@ -288,14 +297,24 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   )}
                   
                   {task.result && task.status === 'completed' && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View Result
-                      </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
-                        {JSON.stringify(task.result, null, 2)}
-                      </pre>
-                    </details>
+                    <div className="mt-3">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                        {typeof task.result === 'string' ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                            {task.result}
+                          </pre>
+                        ) : task.result?.content ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                            {task.result.content}
+                          </pre>
+                        ) : (
+                          <pre className="text-xs overflow-x-auto">
+                            {JSON.stringify(task.result, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}

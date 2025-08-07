@@ -66,12 +66,18 @@ export class TerminalService extends EventEmitter {
 
       const cwd = options.cwd || (workspace ? workspace.path : process.cwd());
 
-      // Handle common aliases
+      // Handle common aliases and special commands
       let actualCommand = command;
       if (command === 'la') {
         actualCommand = 'ls -la';
       } else if (command === 'll') {
         actualCommand = 'ls -l';
+      } else if (command === 'termux-info') {
+        // Special diagnostic command for Termux
+        actualCommand = 'echo "=== Termux Info ===" && echo "PREFIX: $PREFIX" && echo "PATH: $PATH" && echo "SHELL: $SHELL" && echo "PWD: $PWD" && echo "=== Commands ===" && which ls && which bash && echo "=== End ==="';
+      } else if (command === 'env-info') {
+        // Environment info command
+        actualCommand = 'echo "=== Environment ===" && env | grep -E "(TERM|LANG|PATH|PREFIX|SHELL)" && echo "=== End ==="';
       }
 
       // Termux-specific environment
@@ -97,17 +103,36 @@ export class TerminalService extends EventEmitter {
         };
       }
 
-      // Parse command and arguments for proper spawning
-      const cmdParts = actualCommand.trim().split(/\s+/);
-      const cmd = cmdParts[0];
-      const args = cmdParts.slice(1);
+      // For simple commands and aliases, use shell execution
+      // For complex commands with pipes, redirections, etc., always use shell
+      const needsShell = actualCommand.includes('|') || actualCommand.includes('>') || 
+                        actualCommand.includes('<') || actualCommand.includes('&&') ||
+                        actualCommand.includes('||') || actualCommand.includes(';') ||
+                        actualCommand.includes('`') || actualCommand.includes('$');
 
-      const process = spawn(cmd, args, {
+      let spawnOptions = {
         cwd,
         env: { ...termuxEnv, ...options.env },
-        shell: options.shell !== false,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+        shell: options.shell !== false || needsShell,
+        stdio: ['pipe', 'pipe', 'pipe'] as const,
+      };
+
+      // For Termux, always use shell to handle environment properly
+      if (isTermux) {
+        spawnOptions.shell = true;
+      }
+
+      let process;
+      if (spawnOptions.shell || needsShell) {
+        // Use shell for complex commands or when explicitly requested
+        process = spawn(actualCommand, [], spawnOptions);
+      } else {
+        // Parse command and arguments for simple commands
+        const cmdParts = actualCommand.trim().split(/\s+/);
+        const cmd = cmdParts[0];
+        const args = cmdParts.slice(1);
+        process = spawn(cmd, args, spawnOptions);
+      }
 
       const processId = process.pid?.toString() || Date.now().toString();
       this.processes.set(processId, process);
@@ -225,11 +250,20 @@ export class TerminalService extends EventEmitter {
         };
       }
 
-      exec(actualCommand, { 
+      const execOptions = {
         cwd: cwd || process.cwd(), 
         env,
-        timeout: 30000 // 30 second timeout
-      }, (error, stdout, stderr) => {
+        timeout: 30000, // 30 second timeout
+        shell: true, // Always use shell for compatibility
+        encoding: 'utf8' as const
+      };
+
+      // For Termux, ensure we use the right shell
+      if (isTermux && env.PREFIX) {
+        execOptions.shell = `${env.PREFIX}/bin/bash`;
+      }
+
+      exec(actualCommand, execOptions, (error, stdout, stderr) => {
         if (error) {
           // Provide more helpful error messages
           let errorMsg = `Command failed: ${actualCommand}`;
@@ -308,19 +342,20 @@ export class TerminalService extends EventEmitter {
       'curl', 'wget', 'tar', 'zip', 'unzip', 'ssh', 'scp',
       'rsync', 'vim', 'nano', 'emacs', 'code', 'subl',
       'ls', 'la', 'll', 'cat', 'grep', 'find', 'touch', 'mkdir',
-      'rm', 'cp', 'mv', 'pwd', 'cd', 'echo', 'head', 'tail'
+      'rm', 'cp', 'mv', 'pwd', 'cd', 'echo', 'head', 'tail',
+      'termux-info', 'env-info'
     ];
 
     const available: string[] = [];
     
-    for (const command of commonCommands) {
-      // For aliases, we just add them directly since they're handled in executeCommand
-      if (command === 'la' || command === 'll') {
-        available.push(command);
-      } else if (await this.checkCommandExists(command)) {
-        available.push(command);
+          for (const command of commonCommands) {
+        // For aliases and special commands, we just add them directly since they're handled in executeCommand
+        if (command === 'la' || command === 'll' || command === 'termux-info' || command === 'env-info') {
+          available.push(command);
+        } else if (await this.checkCommandExists(command)) {
+          available.push(command);
+        }
       }
-    }
     
     return available;
   }
