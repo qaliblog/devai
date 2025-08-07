@@ -1,7 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { sshService, SSHConnection } from './ssh';
-import { terminalService } from './terminal';
 
 export interface Workspace {
   id: string;
@@ -103,8 +102,13 @@ export class WorkspaceManager {
     workspace.lastAccessed = Date.now();
     this.activeWorkspaceId = workspaceId;
     
-    // Notify terminal service of workspace change
-    terminalService.setActiveWorkspace(workspaceId);
+    // Notify terminal service of workspace change (avoid circular dependency)
+    try {
+      const { terminalService } = await import('./terminal');
+      terminalService.setActiveWorkspace(workspaceId);
+    } catch (error) {
+      console.warn('Could not notify terminal service of workspace change:', error);
+    }
   }
 
   getActiveWorkspace(): Workspace | null {
