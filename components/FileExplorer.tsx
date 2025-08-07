@@ -171,6 +171,19 @@ export default function FileExplorer({ workspaceId }: FileExplorerProps) {
   return (
     <div className="flex-1 flex flex-col bg-background">
       {/* Toolbar */}
+      <div className="flex items-center justify-between mb-2">
+        <button
+          onClick={navigateUp}
+          className="mobile-button flex items-center space-x-1 px-2 py-1 rounded hover:bg-accent"
+          disabled={currentPath === '.'}
+          title="Go up one directory"
+        >
+          <Folder className="h-4 w-4" />
+          <span className="text-xs">Up</span>
+        </button>
+        <span className="text-xs text-muted-foreground">{currentPath}</span>
+      </div>
+      
       <div className="flex items-center justify-between p-2 border-b border-border bg-card">
         <div className="flex items-center space-x-2">
           <h2 className="text-sm font-semibold">Files</h2>

@@ -97,10 +97,8 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
           workspaceId,
         }),
       });
-
       const data = await response.json();
-      
-      if (data.success) {
+      if (data.success && data.result) {
         const result = data.result;
         
         // Add output to process
@@ -118,8 +116,21 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
               }
             : p
         ));
+      } else {
+        setProcesses(prev => prev.map(p =>
+          p.id === processId
+            ? {
+                ...p,
+                status: 'failed',
+                output: [
+                  ...p.output,
+                  { type: 'stderr', data: data.result?.stderr || 'Command failed', timestamp: Date.now() },
+                ],
+              }
+            : p
+        ));
       }
-    } catch (error) {
+    } catch (error: any) {
       setProcesses(prev => prev.map(p => 
         p.id === processId 
           ? {
@@ -127,13 +138,14 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
               status: 'failed',
               output: [
                 ...p.output,
-                { type: 'stderr', data: `Error: ${error}`, timestamp: Date.now() },
+                { type: 'stderr', data: error.message || 'Command failed', timestamp: Date.now() },
               ],
             }
           : p
       ));
     } finally {
       setIsExecuting(false);
+      loadCurrentDirectory();
     }
   };
 

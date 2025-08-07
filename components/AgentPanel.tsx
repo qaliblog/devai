@@ -200,13 +200,19 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             <option value="analysis">Code Analysis</option>
           </select>
           
-          <input
-            type="text"
+          <textarea
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-3 py-2 text-sm border border-border rounded bg-background"
-            onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
+            className="flex-1 px-3 py-2 text-sm border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
+            rows={1}
+            style={{ minHeight: 44, maxHeight: 120, overflow: 'auto' }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleAddTask();
+              }
+            }}
           />
           
           <button

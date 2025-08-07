@@ -371,6 +371,7 @@
     border-top: 1px solid hsl(var(--border));
     padding: 8px;
     z-index: 10;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
   
   /* Terminal output improvements */
@@ -499,5 +500,24 @@
     max-height: 28px;
     padding: 0 12px;
     font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .agent-chat-textarea {
+    min-height: 44px !important;
+    max-height: 120px;
+    font-size: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    resize: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .agent-chat-input-bar {
+    position: sticky;
+    bottom: 0;
+    background: hsl(var(--background));
+    z-index: 20;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 }
