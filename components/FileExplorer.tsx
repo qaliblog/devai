@@ -13,9 +13,10 @@ interface FileItem {
 
 interface FileExplorerProps {
   workspaceId?: string;
+  onOpenFile?: (filePath: string) => void;
 }
 
-export default function FileExplorer({ workspaceId }: FileExplorerProps) {
+export default function FileExplorer({ workspaceId, onOpenFile }: FileExplorerProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('.');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -74,11 +75,15 @@ export default function FileExplorer({ workspaceId }: FileExplorerProps) {
   };
 
   const navigateUp = () => {
+    if (currentPath === '.') return;
+    
     const pathParts = currentPath.split('/').filter(Boolean);
     if (pathParts.length > 0) {
       pathParts.pop();
       const newPath = pathParts.length > 0 ? pathParts.join('/') : '.';
       setCurrentPath(newPath);
+    } else if (currentPath !== '.') {
+      setCurrentPath('.');
     }
   };
 
@@ -254,7 +259,9 @@ export default function FileExplorer({ workspaceId }: FileExplorerProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Edit file
+                        if (!file.isDirectory) {
+                          onOpenFile?.(file.path);
+                        }
                       }}
                       className="p-1 hover:bg-accent rounded"
                       title="Edit"

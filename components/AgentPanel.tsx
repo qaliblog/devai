@@ -315,17 +315,21 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   {task.result && task.status === 'completed' && (
                     <div className="mt-3">
                       <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm max-h-96 overflow-y-auto">
                         {typeof task.result === 'string' ? (
-                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result}
                           </pre>
                         ) : task.result?.content ? (
-                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result.content}
                           </pre>
+                        ) : task.result?.generatedCode ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
+                            {task.result.generatedCode}
+                          </pre>
                         ) : (
-                          <pre className="text-xs overflow-x-auto">
+                          <pre className="text-xs overflow-x-auto break-words">
                             {JSON.stringify(task.result, null, 2)}
                           </pre>
                         )}

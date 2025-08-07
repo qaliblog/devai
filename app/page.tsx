@@ -17,6 +17,7 @@ export default function Home() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('default');
+  const [fileToOpen, setFileToOpen] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize agent connection
@@ -59,6 +60,11 @@ export default function Home() {
 
   const handleWorkspaceChange = (workspaceId: string) => {
     setActiveWorkspaceId(workspaceId);
+  };
+
+  const handleOpenFile = (filePath: string) => {
+    setFileToOpen(filePath);
+    setActiveTab('editor');
   };
 
   const tabs = [
@@ -185,9 +191,9 @@ export default function Home() {
 
           {/* Content Area */}
           <div className="flex-1 overflow-hidden mobile-panel">
-            {activeTab === 'editor' && <Editor workspaceId={activeWorkspaceId} />}
+            {activeTab === 'editor' && <Editor workspaceId={activeWorkspaceId} fileToOpen={fileToOpen} onFileOpened={() => setFileToOpen(null)} />}
             {activeTab === 'terminal' && <TerminalPanel workspaceId={activeWorkspaceId} />}
-            {activeTab === 'files' && <FileExplorer workspaceId={activeWorkspaceId} />}
+            {activeTab === 'files' && <FileExplorer workspaceId={activeWorkspaceId} onOpenFile={handleOpenFile} />}
             {activeTab === 'agent' && <AgentPanel workspaceId={activeWorkspaceId} />}
           </div>
         </div>
