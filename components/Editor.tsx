@@ -16,15 +16,24 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
 
 interface EditorProps {
   workspaceId?: string;
+  fileToOpen?: string | null;
+  onFileOpened?: () => void;
 }
 
-export default function Editor({ workspaceId }: EditorProps) {
+export default function Editor({ workspaceId, fileToOpen, onFileOpened }: EditorProps) {
   const [code, setCode] = useState('// Welcome to DevAI\n// Start coding here...');
   const [language, setLanguage] = useState('javascript');
   const [theme, setTheme] = useState('vs-dark');
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const editorRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (fileToOpen) {
+      openFileByPath(fileToOpen);
+      onFileOpened?.();
+    }
+  }, [fileToOpen, onFileOpened]);
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
@@ -71,11 +80,7 @@ export default function Editor({ workspaceId }: EditorProps) {
     }
   };
 
-  const handleOpenFile = async () => {
-    // In a real app, you'd use a file picker
-    const filename = prompt('Enter filename to open:');
-    if (!filename) return;
-
+  const openFileByPath = async (filename: string) => {
     try {
       const response = await fetch(`/api/files?action=read&path=${encodeURIComponent(filename)}&workspaceId=${workspaceId || 'default'}`);
       const data = await response.json();
@@ -108,6 +113,14 @@ export default function Editor({ workspaceId }: EditorProps) {
     } catch (error) {
       console.error('Failed to open file:', error);
     }
+  };
+
+  const handleOpenFile = async () => {
+    // In a real app, you'd use a file picker
+    const filename = prompt('Enter filename to open:');
+    if (!filename) return;
+    
+    await openFileByPath(filename);
   };
 
   const languages = [

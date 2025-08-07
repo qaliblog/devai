@@ -101,6 +101,14 @@ export class WorkspaceManager {
     workspace.isActive = true;
     workspace.lastAccessed = Date.now();
     this.activeWorkspaceId = workspaceId;
+    
+    // Notify terminal service of workspace change (avoid circular dependency)
+    try {
+      const { terminalService } = await import('./terminal');
+      terminalService.setActiveWorkspace(workspaceId);
+    } catch (error) {
+      console.warn('Could not notify terminal service of workspace change:', error);
+    }
   }
 
   getActiveWorkspace(): Workspace | null {

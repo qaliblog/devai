@@ -38,17 +38,9 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
   const [usePrivateKey, setUsePrivateKey] = useState(false);
 
   useEffect(() => {
-    // Initialize with default workspace
-    const defaultWorkspace: Workspace = {
-      id: 'default',
-      name: 'Current Project',
-      type: 'local',
-      path: process.cwd ? process.cwd() : '/',
-      isActive: true,
-      lastAccessed: Date.now(),
-    };
-    setWorkspaces([defaultWorkspace]);
-    setActiveWorkspace(defaultWorkspace);
+    // Load workspaces from API
+    loadWorkspaces();
+    loadActiveWorkspace();
   }, []);
 
   const loadWorkspaces = async () => {
@@ -123,22 +115,37 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
       setLoading(true);
       setError(null);
       
-      const newWorkspace: Workspace = {
-        id: `local_${Date.now()}`,
-        name: localName,
-        type: 'local',
-        path: localPath,
-        isActive: false,
-        lastAccessed: Date.now(),
-      };
+      // Call the API to create the local workspace
+      const response = await fetch('/api/workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add-local',
+          name: localName,
+          path: localPath,
+        }),
+      });
 
-      setWorkspaces(prev => [...prev, newWorkspace]);
-      setShowAddForm(false);
-      setLocalName('');
-      setLocalPath('');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create local workspace');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Reload workspaces to get the updated list
+        await loadWorkspaces();
+        
+        setShowAddForm(false);
+        setLocalName('');
+        setLocalPath('');
+      } else {
+        throw new Error(data.error || 'Failed to create local workspace');
+      }
     } catch (error) {
       console.error('Failed to add local workspace:', error);
-      setError('Failed to add workspace');
+      setError(error.message || 'Failed to add workspace');
     } finally {
       setLoading(false);
     }
@@ -149,26 +156,45 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
       setLoading(true);
       setError(null);
       
-      const newWorkspace: Workspace = {
-        id: `ssh_${Date.now()}`,
-        name: sshName,
-        type: 'ssh',
-        path: `/home/${sshUsername}`,
-        isActive: false,
-        lastAccessed: Date.now(),
-      };
+      // Call the API to create the SSH workspace
+      const response = await fetch('/api/workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add-ssh',
+          name: sshName,
+          host: sshHost,
+          port: parseInt(sshPort) || 22,
+          username: sshUsername,
+          password: usePrivateKey ? undefined : sshPassword,
+          privateKey: usePrivateKey ? sshPrivateKey : undefined,
+        }),
+      });
 
-      setWorkspaces(prev => [...prev, newWorkspace]);
-      setShowAddForm(false);
-      setSshName('');
-      setSshHost('');
-      setSshPort('22');
-      setSshUsername('');
-      setSshPassword('');
-      setSshPrivateKey('');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create SSH workspace');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Reload workspaces to get the updated list
+        await loadWorkspaces();
+        
+        setShowAddForm(false);
+        setSshName('');
+        setSshHost('');
+        setSshPort('22');
+        setSshUsername('');
+        setSshPassword('');
+        setSshPrivateKey('');
+      } else {
+        throw new Error(data.error || 'Failed to create SSH workspace');
+      }
     } catch (error) {
       console.error('Failed to add SSH workspace:', error);
-      setError('Failed to add workspace');
+      setError(error.message || 'Failed to add workspace');
     } finally {
       setLoading(false);
     }

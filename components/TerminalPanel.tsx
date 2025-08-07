@@ -51,13 +51,15 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
   }, [processes]);
 
   useEffect(() => {
-    // Load current directory
+    // Load current directory when workspace changes
     loadCurrentDirectory();
+    // Clear processes when workspace changes to avoid confusion
+    setProcesses([]);
   }, [workspaceId]);
 
   const loadCurrentDirectory = async () => {
     try {
-      const response = await fetch('/api/terminal?action=current-directory', {
+      const response = await fetch(`/api/terminal?action=current-directory&workspaceId=${workspaceId || 'default'}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });

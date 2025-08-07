@@ -406,6 +406,9 @@ export class TerminalService extends EventEmitter {
 
   setActiveWorkspace(workspaceId: string): void {
     this.activeWorkspaceId = workspaceId;
+    // Clear processes when switching workspaces to avoid confusion
+    this.killAllProcesses();
+    this.outputHistory.clear();
   }
 
   getActiveWorkspaceId(): string | null {

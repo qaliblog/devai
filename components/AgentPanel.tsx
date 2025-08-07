@@ -199,7 +199,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Add Task */}
-      <div className="p-6 border-b border-border bg-card flex-shrink-0">
+      <div className="p-4 border-b border-border bg-card flex-shrink-0">
         <div className="flex flex-col space-y-4">
           <select
             value={selectedTaskType}
@@ -216,9 +216,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-6 py-4 text-lg border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
-            rows={8}
-            style={{ minHeight: 200, maxHeight: 500, overflow: 'auto' }}
+            className="flex-1 px-4 py-3 text-base border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
+            rows={4}
+            style={{ minHeight: 120, maxHeight: 300, overflow: 'auto' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -230,7 +230,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
           <button
             onClick={handleAddTask}
             disabled={!newTask.trim()}
-            className="px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-lg font-medium flex items-center justify-center"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-base font-medium flex items-center justify-center"
           >
             <Play className="h-5 w-5 mr-2" />
             Execute Task
@@ -262,7 +262,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Task History */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
-        <div className="p-4">
+        <div className="p-4 pt-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold">Task History</h3>
             <button
@@ -315,17 +315,21 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   {task.result && task.status === 'completed' && (
                     <div className="mt-3">
                       <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm max-h-[480px] overflow-y-auto">
                         {typeof task.result === 'string' ? (
-                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result}
                           </pre>
                         ) : task.result?.content ? (
-                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result.content}
                           </pre>
+                        ) : task.result?.generatedCode ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
+                            {task.result.generatedCode}
+                          </pre>
                         ) : (
-                          <pre className="text-xs overflow-x-auto">
+                          <pre className="text-xs overflow-x-auto break-words">
                             {JSON.stringify(task.result, null, 2)}
                           </pre>
                         )}
