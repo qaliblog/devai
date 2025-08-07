@@ -76,14 +76,33 @@ export class TerminalService extends EventEmitter {
 
       // Termux-specific environment
       const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
-      const termuxEnv = isTermux ? {
-        TERM: 'xterm-256color',
-        COLORTERM: 'truecolor',
-        PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`,
-        ...process.env
-      } : process.env;
+      const isSSH = !!process.env.SSH_CLIENT || !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION;
+      
+      let termuxEnv = { ...process.env };
+      if (isTermux) {
+        termuxEnv = {
+          ...termuxEnv,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`
+        };
+      }
+      
+      // For SSH sessions, ensure proper environment
+      if (isSSH) {
+        termuxEnv = {
+          ...termuxEnv,
+          TERM: process.env.TERM || 'xterm-256color',
+          LANG: process.env.LANG || 'en_US.UTF-8'
+        };
+      }
 
-      const process = spawn(actualCommand, [], {
+      // Parse command and arguments for proper spawning
+      const cmdParts = actualCommand.trim().split(/\s+/);
+      const cmd = cmdParts[0];
+      const args = cmdParts.slice(1);
+
+      const process = spawn(cmd, args, {
         cwd,
         env: { ...termuxEnv, ...options.env },
         shell: options.shell !== false,
@@ -176,9 +195,47 @@ export class TerminalService extends EventEmitter {
 
   async executeCommandSimple(command: string, cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      exec(command, { cwd }, (error, stdout, stderr) => {
+      // Handle common aliases
+      let actualCommand = command;
+      if (command === 'la') {
+        actualCommand = 'ls -la';
+      } else if (command === 'll') {
+        actualCommand = 'ls -l';
+      }
+
+      // Termux-specific environment
+      const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
+      const isSSH = !!process.env.SSH_CLIENT || !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION;
+      
+      let env = { ...process.env };
+      if (isTermux) {
+        env = {
+          ...env,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`
+        };
+      }
+      
+      if (isSSH) {
+        env = {
+          ...env,
+          TERM: process.env.TERM || 'xterm-256color',
+          LANG: process.env.LANG || 'en_US.UTF-8'
+        };
+      }
+
+      exec(actualCommand, { 
+        cwd: cwd || process.cwd(), 
+        env,
+        timeout: 30000 // 30 second timeout
+      }, (error, stdout, stderr) => {
         if (error) {
-          reject(new Error(`Command failed: ${error.message}\nStderr: ${stderr}`));
+          // Provide more helpful error messages
+          let errorMsg = `Command failed: ${actualCommand}`;
+          if (stderr) errorMsg += `\nError: ${stderr}`;
+          if (error.message) errorMsg += `\nDetails: ${error.message}`;
+          reject(new Error(errorMsg));
         } else {
           resolve(stdout.trim());
         }

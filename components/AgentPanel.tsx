@@ -187,12 +187,12 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Add Task */}
-      <div className="p-4 border-b border-border bg-card">
-        <div className="flex items-center space-x-2">
+      <div className="p-6 border-b border-border bg-card">
+        <div className="flex flex-col space-y-4">
           <select
             value={selectedTaskType}
             onChange={(e) => setSelectedTaskType(e.target.value as any)}
-            className="px-3 py-2 text-sm border border-border rounded bg-background"
+            className="px-4 py-3 text-base border-2 border-border rounded-lg bg-background"
           >
             <option value="code">Code Generation</option>
             <option value="command">Command Execution</option>
@@ -204,9 +204,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-4 py-3 text-base border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
-            rows={5}
-            style={{ minHeight: 120, maxHeight: 300, overflow: 'auto' }}
+            className="flex-1 px-6 py-4 text-lg border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
+            rows={8}
+            style={{ minHeight: 200, maxHeight: 500, overflow: 'auto' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -218,9 +218,10 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
           <button
             onClick={handleAddTask}
             disabled={!newTask.trim()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
+            className="px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-lg font-medium flex items-center justify-center"
           >
-            Add Task
+            <Play className="h-5 w-5 mr-2" />
+            Execute Task
           </button>
         </div>
       </div>
