@@ -38,8 +38,10 @@ export class TerminalService extends EventEmitter {
       workspaceManager.getActiveWorkspace();
 
     if (workspace && workspace.type === 'ssh') {
+      console.log(`Executing SSH command: ${command} on workspace: ${workspace.id}`);
       return this.executeSSHCommand(workspace, command, options);
     } else {
+      console.log(`Executing local command: ${command}`);
       return this.executeLocalCommand(command, options);
     }
   }
@@ -378,6 +380,12 @@ export class TerminalService extends EventEmitter {
     const startTime = Date.now();
     
     try {
+      // Check if the SSH connection is still valid
+      const connection = sshService.getConnection(workspace.sshConnection.id);
+      if (!connection || connection.status !== 'connected') {
+        throw new Error('SSH connection is not active. Please reconnect.');
+      }
+
       const sshCommand = await sshService.executeCommand(workspace.sshConnection.id, command);
       
       const duration = Date.now() - startTime;
@@ -385,7 +393,7 @@ export class TerminalService extends EventEmitter {
       return {
         success: sshCommand.exitCode === 0,
         stdout: sshCommand.output,
-        stderr: '',
+        stderr: sshCommand.exitCode !== 0 ? `Command exited with code ${sshCommand.exitCode}` : '',
         exitCode: sshCommand.exitCode,
         duration,
         workspaceId: workspace.id,
@@ -396,7 +404,7 @@ export class TerminalService extends EventEmitter {
       return {
         success: false,
         stdout: '',
-        stderr: error.message,
+        stderr: `SSH Error: ${error.message}`,
         exitCode: -1,
         duration,
         workspaceId: workspace.id,
