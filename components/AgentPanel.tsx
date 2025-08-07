@@ -262,8 +262,8 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Task History */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
-        <div className="p-4 pt-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 pt-6 pb-8 agent-task-history">
+          <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-semibold">Task History</h3>
             <button
               onClick={() => {
@@ -279,17 +279,17 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
           </div>
           
           {agentState.taskHistory.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-12 text-muted-foreground">
               No tasks yet. Add a task to get started.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {agentState.taskHistory.slice().reverse().map((task) => (
                 <div
                   key={task.id}
-                  className="bg-card border border-border rounded-lg p-3"
+                  className="bg-card border border-border rounded-lg p-4 mt-4 agent-task-item"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       {getTaskIcon(task.type)}
                       <span className="text-sm font-medium">
@@ -302,20 +302,20 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                     </span>
                   </div>
                   
-                  <p className="text-sm text-foreground mb-2">
+                  <p className="text-sm text-foreground mb-3">
                     {task.description}
                   </p>
                   
                   {task.error && (
-                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                    <div className="text-xs text-destructive bg-destructive/10 p-3 rounded mb-3">
                       Error: {task.error}
                     </div>
                   )}
                   
                   {task.result && task.status === 'completed' && (
-                    <div className="mt-3">
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm max-h-[480px] overflow-y-auto">
+                    <div className="mt-4">
+                      <div className="text-xs font-medium text-muted-foreground mb-3">Response:</div>
+                      <div className="bg-muted/50 rounded-lg p-4 text-sm max-h-[480px] overflow-y-auto agent-response-content">
                         {typeof task.result === 'string' ? (
                           <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result}
