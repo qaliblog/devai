@@ -13,6 +13,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if AI provider is available
+    const isConnected = await aiProviderManager.checkConnection();
+    if (!isConnected) {
+      return NextResponse.json(
+        { 
+          error: 'AI service unavailable',
+          details: 'Ollama is not running. Please start Ollama with: ollama serve',
+          fallback: `Here's a simple response to "${message}": I apologize, but the AI service is currently unavailable. Please make sure Ollama is installed and running.`,
+          type: 'service_unavailable'
+        },
+        { status: 503 }
+      );
+    }
+
     // Ensure we have a valid provider
     const targetProvider = provider || aiProviderManager.getCurrentProviderName();
     

@@ -115,9 +115,10 @@ export class OllamaProvider implements AIProvider {
 
   async checkConnection(): Promise<boolean> {
     try {
-      await axios.get(`${this.baseUrl}/api/tags`);
-      return true;
+      const response = await axios.get(`${this.baseUrl}/api/tags`, { timeout: 5000 });
+      return response.status === 200;
     } catch (error) {
+      console.error('Ollama connection failed:', error);
       return false;
     }
   }
@@ -453,7 +454,12 @@ export class AIProviderManager {
     if (!provider) {
       return false;
     }
-    return provider.checkConnection();
+    try {
+      return await provider.checkConnection();
+    } catch (error) {
+      console.error('Provider connection check failed:', error);
+      return false;
+    }
   }
 
   async listModels(): Promise<string[]> {

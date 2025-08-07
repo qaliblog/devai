@@ -94,6 +94,10 @@
 
 /* Mobile-friendly styles */
 @media (max-width: 768px) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
   /* Ensure app fits in viewport */
   .mobile-layout {
     width: 100vw;
@@ -203,14 +207,15 @@
   }
   
   .mobile-panel {
-    height: 100%;
-    max-height: 100%;
+    height: calc(100% - env(safe-area-inset-bottom));
+    max-height: calc(100% - env(safe-area-inset-bottom));
     overflow: hidden;
     background: hsl(var(--background));
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
   /* Mobile modal improvements */
@@ -241,9 +246,20 @@
   /* Mobile input improvements */
   .mobile-input {
     min-height: 44px;
-    padding: 12px 16px;
+    padding: 16px 20px;
     font-size: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--background));
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  .mobile-input:focus {
+    border-color: hsl(var(--primary));
+    outline: none;
+    box-shadow: 0 0 0 3px hsla(var(--primary), 0.1);
   }
 }
 
@@ -257,6 +273,19 @@
   input, select, textarea {
     min-height: 44px;
     font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 8px;
+    padding: 12px 16px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    border-color: hsl(var(--primary));
+    outline: none;
+    box-shadow: 0 0 0 2px hsla(var(--primary), 0.1);
   }
 }
 
@@ -369,9 +398,10 @@
     bottom: 0;
     background: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
-    padding: 8px;
+    padding: 16px;
     z-index: 10;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+    margin-bottom: 0;
   }
   
   /* Terminal output improvements */
@@ -386,6 +416,11 @@
   .terminal-input {
     font-size: 14px;
     min-height: 44px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid hsl(var(--border));
+    margin-left: 8px;
+    background: hsl(var(--background)) !important;
   }
   
   /* Terminal toolbar improvements */
@@ -505,19 +540,24 @@
 
 @media (max-width: 768px) {
   .agent-chat-textarea {
-    min-height: 80px !important;
-    max-height: 200px;
+    min-height: 120px !important;
+    max-height: 300px;
     font-size: 16px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 16px !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     resize: none;
     width: 100%;
     box-sizing: border-box;
+    line-height: 1.5;
   }
   .agent-chat-input-bar {
     position: sticky;
     bottom: 0;
     background: hsl(var(--background));
     z-index: 20;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 16px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    border-top: 1px solid hsl(var(--border));
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   }
 }

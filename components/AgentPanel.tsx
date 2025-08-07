@@ -204,9 +204,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-3 py-2 text-sm border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
-            rows={3}
-            style={{ minHeight: 80, maxHeight: 200, overflow: 'auto' }}
+            className="flex-1 px-4 py-3 text-base border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
+            rows={5}
+            style={{ minHeight: 120, maxHeight: 300, overflow: 'auto' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
