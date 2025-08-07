@@ -66,9 +66,26 @@ export class TerminalService extends EventEmitter {
 
       const cwd = options.cwd || (workspace ? workspace.path : process.cwd());
 
-      const process = spawn(command, [], {
+      // Handle common aliases
+      let actualCommand = command;
+      if (command === 'la') {
+        actualCommand = 'ls -la';
+      } else if (command === 'll') {
+        actualCommand = 'ls -l';
+      }
+
+      // Termux-specific environment
+      const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
+      const termuxEnv = isTermux ? {
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+        PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`,
+        ...process.env
+      } : process.env;
+
+      const process = spawn(actualCommand, [], {
         cwd,
-        env: { ...process.env, ...options.env },
+        env: { ...termuxEnv, ...options.env },
         shell: options.shell !== false,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -200,13 +217,16 @@ export class TerminalService extends EventEmitter {
     nodeVersion: string;
     cwd: string;
     env: Record<string, string>;
+    isTermux?: boolean;
   }> {
+    const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
     return {
       platform: process.platform,
       arch: process.arch,
       nodeVersion: process.version,
       cwd: process.cwd(),
       env: process.env,
+      isTermux,
     };
   }
 
@@ -229,13 +249,18 @@ export class TerminalService extends EventEmitter {
       'gcc', 'g++', 'make', 'cmake', 'docker', 'docker-compose',
       'kubectl', 'helm', 'terraform', 'aws', 'az', 'gcloud',
       'curl', 'wget', 'tar', 'zip', 'unzip', 'ssh', 'scp',
-      'rsync', 'vim', 'nano', 'emacs', 'code', 'subl'
+      'rsync', 'vim', 'nano', 'emacs', 'code', 'subl',
+      'ls', 'la', 'll', 'cat', 'grep', 'find', 'touch', 'mkdir',
+      'rm', 'cp', 'mv', 'pwd', 'cd', 'echo', 'head', 'tail'
     ];
 
     const available: string[] = [];
     
     for (const command of commonCommands) {
-      if (await this.checkCommandExists(command)) {
+      // For aliases, we just add them directly since they're handled in executeCommand
+      if (command === 'la' || command === 'll') {
+        available.push(command);
+      } else if (await this.checkCommandExists(command)) {
         available.push(command);
       }
     }

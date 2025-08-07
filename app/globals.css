@@ -505,8 +505,8 @@
 
 @media (max-width: 768px) {
   .agent-chat-textarea {
-    min-height: 44px !important;
-    max-height: 120px;
+    min-height: 80px !important;
+    max-height: 200px;
     font-size: 16px;
     padding-bottom: max(16px, env(safe-area-inset-bottom));
     resize: none;

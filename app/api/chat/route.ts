@@ -13,18 +13,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the current provider
-    const currentProvider = aiProviderManager.getCurrentProvider();
+    // Ensure we have a valid provider
+    const targetProvider = provider || aiProviderManager.getCurrentProviderName();
     
-    // Use the specified provider or fall back to current
-    const targetProvider = provider || currentProvider;
+    // Format message for AI provider
+    const messages = [
+      ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+      { role: 'user' as const, content: message }
+    ];
 
     // Generate response using the appropriate provider
     const response = await aiProviderManager.generateResponse(
-      message,
+      messages,
       {
         model,
-        systemPrompt,
         provider: targetProvider
       }
     );
@@ -38,10 +40,24 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Chat API error:', error);
+    
+    // Check if it's an Ollama connection error
+    if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+      return NextResponse.json(
+        { 
+          error: 'Unable to connect to Ollama',
+          details: 'Make sure Ollama is running and accessible. Try: ollama serve',
+          type: 'connection_error'
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to generate response',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        type: 'generation_error'
       },
       { status: 500 }
     );

@@ -325,9 +325,13 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
             value={currentCommand}
             onChange={(e) => setCurrentCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Enter command..."
+            placeholder="Enter command (try: la, ll, ls -la)..."
             className="flex-1 bg-transparent border-none outline-none text-foreground text-sm terminal-input"
             disabled={isExecuting}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
           />
           <button
             type="submit"
