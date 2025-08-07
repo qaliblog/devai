@@ -199,37 +199,26 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Add Task */}
-      <div className="p-3 border-b border-border bg-card flex-shrink-0">
-        <div className="flex flex-col space-y-2">
-          <div className="flex space-x-2">
-            <select
-              value={selectedTaskType}
-              onChange={(e) => setSelectedTaskType(e.target.value as any)}
-              className="px-3 py-2 text-sm border border-border rounded bg-background flex-shrink-0"
-            >
-              <option value="code">Code</option>
-              <option value="command">Command</option>
-              <option value="file">File</option>
-              <option value="analysis">Analysis</option>
-            </select>
-            
-            <button
-              onClick={handleAddTask}
-              disabled={!newTask.trim()}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 text-sm font-medium flex items-center flex-shrink-0"
-            >
-              <Play className="h-4 w-4 mr-1" />
-              Run
-            </button>
-          </div>
+      <div className="p-4 border-b border-border bg-card flex-shrink-0">
+        <div className="flex flex-col space-y-4">
+          <select
+            value={selectedTaskType}
+            onChange={(e) => setSelectedTaskType(e.target.value as any)}
+            className="px-4 py-3 text-base border-2 border-border rounded-lg bg-background"
+          >
+            <option value="code">Code Generation</option>
+            <option value="command">Command Execution</option>
+            <option value="file">File Operation</option>
+            <option value="analysis">Code Analysis</option>
+          </select>
           
           <textarea
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="w-full px-3 py-2 text-sm border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
-            rows={2}
-            style={{ minHeight: 60, maxHeight: 120, overflow: 'auto' }}
+            className="flex-1 px-4 py-3 text-base border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
+            rows={4}
+            style={{ minHeight: 120, maxHeight: 300, overflow: 'auto' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -237,6 +226,15 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
               }
             }}
           />
+          
+          <button
+            onClick={handleAddTask}
+            disabled={!newTask.trim()}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-base font-medium flex items-center justify-center"
+          >
+            <Play className="h-5 w-5 mr-2" />
+            Execute Task
+          </button>
         </div>
       </div>
 
@@ -264,7 +262,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Task History */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
-        <div className="p-4">
+        <div className="p-4 pt-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold">Task History</h3>
             <button

@@ -128,24 +128,73 @@ export class SSHService extends EventEmitter {
       timestamp: Date.now(),
     };
 
-    try {
-      // Send command to SSH process
-      if (connection.process?.stdin) {
-        connection.process.stdin.write(command + '\n');
+    return new Promise((resolve, reject) => {
+      try {
+        // Create a unique marker for this command to identify its output
+        const marker = `__CMD_${commandId}_END__`;
+        const fullCommand = `${command}; echo "${marker}"; echo $? > /tmp/exitcode_${commandId}`;
+        
+        let output = '';
+        let capturing = false;
+        
+        // Set up temporary data handler for this command
+        const dataHandler = (data: Buffer) => {
+          const text = data.toString();
+          
+          if (!capturing && text.includes('$ ')) {
+            capturing = true;
+            return;
+          }
+          
+          if (capturing) {
+            if (text.includes(marker)) {
+              // Command finished, get exit code
+              if (connection.process?.stdin) {
+                connection.process.stdin.write(`cat /tmp/exitcode_${commandId}; rm -f /tmp/exitcode_${commandId}\n`);
+              }
+              
+              // Clean up the output (remove the marker)
+              output = output.replace(marker, '').trim();
+              sshCommand.output = output;
+              
+              // Remove this handler
+              connection.process?.stdout?.removeListener('data', dataHandler);
+              
+              // Store command
+              const connectionCommands = this.commands.get(connectionId) || [];
+              connectionCommands.push(sshCommand);
+              this.commands.set(connectionId, connectionCommands);
+              
+              this.emit('command-executed', { connectionId, command: sshCommand });
+              resolve(sshCommand);
+            } else {
+              output += text;
+            }
+          }
+        };
+        
+        // Add temporary listener for this command
+        connection.process?.stdout?.on('data', dataHandler);
+        
+        // Send command to SSH process
+        if (connection.process?.stdin) {
+          connection.process.stdin.write(fullCommand + '\n');
+        }
+        
+        // Timeout after 30 seconds
+        setTimeout(() => {
+          connection.process?.stdout?.removeListener('data', dataHandler);
+          sshCommand.exitCode = 124; // timeout exit code
+          sshCommand.output = output || 'Command timed out';
+          resolve(sshCommand);
+        }, 30000);
+        
+      } catch (error) {
+        sshCommand.exitCode = 1;
+        sshCommand.output = error.message;
+        reject(error);
       }
-
-      // Store command
-      const connectionCommands = this.commands.get(connectionId) || [];
-      connectionCommands.push(sshCommand);
-      this.commands.set(connectionId, connectionCommands);
-
-      this.emit('command-executed', { connectionId, command: sshCommand });
-      return sshCommand;
-    } catch (error) {
-      sshCommand.exitCode = 1;
-      sshCommand.output = error.message;
-      throw error;
-    }
+    });
   }
 
   getConnection(connectionId: string): SSHConnection | undefined {
