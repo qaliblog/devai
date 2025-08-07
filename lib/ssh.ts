@@ -38,55 +38,22 @@ export class SSHService extends EventEmitter {
     this.commands.set(id, []);
 
     try {
-      // Build SSH command
-      const sshArgs = [
-        '-o', 'StrictHostKeyChecking=no',
-        '-o', 'UserKnownHostsFile=/dev/null',
-        '-p', connection.port.toString(),
-        `${connection.username}@${connection.host}`,
-      ];
+      // Test the connection first
+      const isConnectable = await this.testConnection(
+        connection.host,
+        connection.port,
+        connection.username,
+        connection.password,
+        connection.privateKey
+      );
 
-      // Add private key if provided
-      if (connection.privateKey) {
-        sshArgs.unshift('-i', connection.privateKey);
-      }
-
-      // Start SSH process
-      const process = spawn('ssh', sshArgs, {
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      sshConnection.process = process;
-      sshConnection.status = 'connected';
-
-      // Handle process events
-      process.stdout?.on('data', (data) => {
-        const output = data.toString();
-        sshConnection.output.push(output);
-        this.emit('output', { connectionId: id, output, type: 'stdout' });
-      });
-
-      process.stderr?.on('data', (data) => {
-        const output = data.toString();
-        sshConnection.output.push(output);
-        this.emit('output', { connectionId: id, output, type: 'stderr' });
-      });
-
-      process.on('close', (code) => {
-        sshConnection.status = 'disconnected';
-        this.emit('disconnected', { connectionId: id, code });
-      });
-
-      process.on('error', (error) => {
+      if (!isConnectable) {
         sshConnection.status = 'error';
-        this.emit('error', { connectionId: id, error: error.message });
-      });
-
-      // Handle password input if needed
-      if (connection.password) {
-        process.stdin?.write(connection.password + '\n');
+        throw new Error('SSH connection test failed');
       }
 
+      // Connection test passed, mark as connected
+      sshConnection.status = 'connected';
       this.emit('connected', { connectionId: id });
       return id;
     } catch (error) {
@@ -128,65 +95,72 @@ export class SSHService extends EventEmitter {
       timestamp: Date.now(),
     };
 
+    // Use a simpler approach: spawn a new SSH process for each command
     return new Promise((resolve, reject) => {
       try {
-        // Create a unique marker for this command to identify its output
-        const marker = `__CMD_${commandId}_END__`;
-        const fullCommand = `${command}; echo "${marker}"; echo $? > /tmp/exitcode_${commandId}`;
-        
-        let output = '';
-        let capturing = false;
-        
-        // Set up temporary data handler for this command
-        const dataHandler = (data: Buffer) => {
-          const text = data.toString();
-          
-          if (!capturing && text.includes('$ ')) {
-            capturing = true;
-            return;
-          }
-          
-          if (capturing) {
-            if (text.includes(marker)) {
-              // Command finished, get exit code
-              if (connection.process?.stdin) {
-                connection.process.stdin.write(`cat /tmp/exitcode_${commandId}; rm -f /tmp/exitcode_${commandId}\n`);
-              }
-              
-              // Clean up the output (remove the marker)
-              output = output.replace(marker, '').trim();
-              sshCommand.output = output;
-              
-              // Remove this handler
-              connection.process?.stdout?.removeListener('data', dataHandler);
-              
-              // Store command
-              const connectionCommands = this.commands.get(connectionId) || [];
-              connectionCommands.push(sshCommand);
-              this.commands.set(connectionId, connectionCommands);
-              
-              this.emit('command-executed', { connectionId, command: sshCommand });
-              resolve(sshCommand);
-            } else {
-              output += text;
-            }
-          }
-        };
-        
-        // Add temporary listener for this command
-        connection.process?.stdout?.on('data', dataHandler);
-        
-        // Send command to SSH process
-        if (connection.process?.stdin) {
-          connection.process.stdin.write(fullCommand + '\n');
+        const sshArgs = [
+          '-o', 'StrictHostKeyChecking=no',
+          '-o', 'UserKnownHostsFile=/dev/null',
+          '-o', 'ConnectTimeout=10',
+          '-p', connection.port.toString(),
+          `${connection.username}@${connection.host}`,
+          command
+        ];
+
+        // Add private key if available
+        if (connection.privateKey) {
+          sshArgs.unshift('-i', connection.privateKey);
         }
-        
+
+        const process = spawn('ssh', sshArgs, {
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        process.stdout?.on('data', (data) => {
+          stdout += data.toString();
+        });
+
+        process.stderr?.on('data', (data) => {
+          stderr += data.toString();
+        });
+
+        process.on('close', (code) => {
+          sshCommand.exitCode = code || 0;
+          sshCommand.output = stdout;
+          
+          // Store command
+          const connectionCommands = this.commands.get(connectionId) || [];
+          connectionCommands.push(sshCommand);
+          this.commands.set(connectionId, connectionCommands);
+          
+          this.emit('command-executed', { connectionId, command: sshCommand });
+          resolve(sshCommand);
+        });
+
+        process.on('error', (error) => {
+          sshCommand.exitCode = 1;
+          sshCommand.output = `SSH Error: ${error.message}\nConnection: ${connection.username}@${connection.host}:${connection.port}\nCommand: ${command}`;
+          reject(error);
+        });
+
+        // Send password if needed
+        if (connection.password) {
+          setTimeout(() => {
+            process.stdin?.write(connection.password + '\n');
+          }, 100);
+        }
+
         // Timeout after 30 seconds
         setTimeout(() => {
-          connection.process?.stdout?.removeListener('data', dataHandler);
-          sshCommand.exitCode = 124; // timeout exit code
-          sshCommand.output = output || 'Command timed out';
-          resolve(sshCommand);
+          process.kill('SIGTERM');
+          if (sshCommand.exitCode === 0) {
+            sshCommand.exitCode = 124; // timeout exit code
+            sshCommand.output = stdout || 'Command timed out';
+            resolve(sshCommand);
+          }
         }, 30000);
         
       } catch (error) {
@@ -215,6 +189,7 @@ export class SSHService extends EventEmitter {
         '-o', 'StrictHostKeyChecking=no',
         '-o', 'UserKnownHostsFile=/dev/null',
         '-o', 'ConnectTimeout=10',
+        '-o', 'BatchMode=no',
         '-p', port.toString(),
         `${username}@${host}`,
         'echo "Connection test successful"',
@@ -241,10 +216,19 @@ export class SSHService extends EventEmitter {
         });
 
         process.on('close', (code) => {
-          resolve(code === 0);
+          if (code === 0 && output.includes('Connection test successful')) {
+            resolve(true);
+          } else {
+            console.error(`SSH test failed for ${username}@${host}:${port}`);
+            console.error(`Exit code: ${code}`);
+            console.error(`Output: ${output}`);
+            console.error(`Error: ${errorOutput}`);
+            resolve(false);
+          }
         });
 
-        process.on('error', () => {
+        process.on('error', (error) => {
+          console.error(`SSH test process error: ${error.message}`);
           resolve(false);
         });
 
@@ -262,6 +246,7 @@ export class SSHService extends EventEmitter {
         }, 15000);
       });
     } catch (error) {
+      console.error(`SSH test connection error: ${error.message}`);
       return false;
     }
   }

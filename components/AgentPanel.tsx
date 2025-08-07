@@ -262,7 +262,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Task History */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
-        <div className="p-4 pt-8">
+        <div className="p-4 pt-16">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold">Task History</h3>
             <button
