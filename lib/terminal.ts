@@ -66,15 +66,76 @@ export class TerminalService extends EventEmitter {
 
       const cwd = options.cwd || (workspace ? workspace.path : process.cwd());
 
-      const process = spawn(command, [], {
-        cwd,
-        env: { ...process.env, ...options.env },
-        shell: options.shell !== false,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      // Handle common aliases and special commands
+      let actualCommand = command;
+      if (command === 'la') {
+        actualCommand = 'ls -la';
+      } else if (command === 'll') {
+        actualCommand = 'ls -l';
+      } else if (command === 'termux-info') {
+        // Special diagnostic command for Termux
+        actualCommand = 'echo "=== Termux Info ===" && echo "PREFIX: $PREFIX" && echo "PATH: $PATH" && echo "SHELL: $SHELL" && echo "PWD: $PWD" && echo "=== Commands ===" && which ls && which bash && echo "=== End ==="';
+      } else if (command === 'env-info') {
+        // Environment info command
+        actualCommand = 'echo "=== Environment ===" && env | grep -E "(TERM|LANG|PATH|PREFIX|SHELL)" && echo "=== End ==="';
+      }
 
-      const processId = process.pid?.toString() || Date.now().toString();
-      this.processes.set(processId, process);
+      // Termux-specific environment
+      const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
+      const isSSH = !!process.env.SSH_CLIENT || !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION;
+      
+      let termuxEnv = { ...process.env };
+      if (isTermux) {
+        termuxEnv = {
+          ...termuxEnv,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`
+        };
+      }
+      
+      // For SSH sessions, ensure proper environment
+      if (isSSH) {
+        termuxEnv = {
+          ...termuxEnv,
+          TERM: process.env.TERM || 'xterm-256color',
+          LANG: process.env.LANG || 'en_US.UTF-8'
+        };
+      }
+
+      // For simple commands and aliases, use shell execution
+      // For complex commands with pipes, redirections, etc., always use shell
+      const needsShell = actualCommand.includes('|') || actualCommand.includes('>') || 
+                        actualCommand.includes('<') || actualCommand.includes('&&') ||
+                        actualCommand.includes('||') || actualCommand.includes(';') ||
+                        actualCommand.includes('`') || actualCommand.includes('$');
+
+      let spawnOptions = {
+        cwd,
+        env: { ...termuxEnv, ...options.env },
+        shell: options.shell !== false || needsShell,
+        stdio: ['pipe', 'pipe', 'pipe'] as const,
+      };
+
+      // For Termux, always use shell to handle environment properly
+      if (isTermux) {
+        spawnOptions.shell = true;
+      }
+
+      let childProcess;
+      if (spawnOptions.shell || needsShell) {
+        // Use shell for complex commands or when explicitly requested
+        childProcess = spawn(actualCommand, [], spawnOptions);
+      } else {
+        // Parse command and arguments for simple commands
+        const cmdParts = actualCommand.trim().split(/\s+/);
+        const cmd = cmdParts[0];
+        const args = cmdParts.slice(1);
+        childProcess = spawn(cmd, args, spawnOptions);
+      }
+
+      const processId = childProcess.pid?.toString() || Date.now().toString();
+      this.processes.set(processId, childProcess);
       this.outputHistory.set(processId, []);
 
       const addOutput = (type: 'stdout' | 'stderr', data: string) => {
@@ -94,15 +155,15 @@ export class TerminalService extends EventEmitter {
         }
       };
 
-      process.stdout?.on('data', (data) => {
+      childProcess.stdout?.on('data', (data) => {
         addOutput('stdout', data.toString());
       });
 
-      process.stderr?.on('data', (data) => {
+      childProcess.stderr?.on('data', (data) => {
         addOutput('stderr', data.toString());
       });
 
-      process.on('close', (code) => {
+      childProcess.on('close', (code) => {
         const duration = Date.now() - startTime;
         const exitOutput: TerminalOutput = {
           type: 'exit',
@@ -129,7 +190,7 @@ export class TerminalService extends EventEmitter {
         });
       });
 
-      process.on('error', (error) => {
+      childProcess.on('error', (error) => {
         const duration = Date.now() - startTime;
         this.processes.delete(processId);
         reject({
@@ -143,12 +204,12 @@ export class TerminalService extends EventEmitter {
 
       if (options.timeout) {
         setTimeout(() => {
-          if (!killed && process.pid) {
+          if (!killed && childProcess.pid) {
             killed = true;
-            process.kill('SIGTERM');
+            childProcess.kill('SIGTERM');
             setTimeout(() => {
-              if (process.pid) {
-                process.kill('SIGKILL');
+              if (childProcess.pid) {
+                childProcess.kill('SIGKILL');
               }
             }, 5000);
           }
@@ -159,9 +220,56 @@ export class TerminalService extends EventEmitter {
 
   async executeCommandSimple(command: string, cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      exec(command, { cwd }, (error, stdout, stderr) => {
+      // Handle common aliases
+      let actualCommand = command;
+      if (command === 'la') {
+        actualCommand = 'ls -la';
+      } else if (command === 'll') {
+        actualCommand = 'ls -l';
+      }
+
+      // Termux-specific environment
+      const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
+      const isSSH = !!process.env.SSH_CLIENT || !!process.env.SSH_TTY || !!process.env.SSH_CONNECTION;
+      
+      let env = { ...process.env };
+      if (isTermux) {
+        env = {
+          ...env,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          PATH: `${process.env.PREFIX}/bin:${process.env.PATH}`
+        };
+      }
+      
+      if (isSSH) {
+        env = {
+          ...env,
+          TERM: process.env.TERM || 'xterm-256color',
+          LANG: process.env.LANG || 'en_US.UTF-8'
+        };
+      }
+
+      const execOptions = {
+        cwd: cwd || process.cwd(), 
+        env,
+        timeout: 30000, // 30 second timeout
+        shell: true, // Always use shell for compatibility
+        encoding: 'utf8' as const
+      };
+
+      // For Termux, ensure we use the right shell
+      if (isTermux && env.PREFIX) {
+        execOptions.shell = `${env.PREFIX}/bin/bash`;
+      }
+
+      exec(actualCommand, execOptions, (error, stdout, stderr) => {
         if (error) {
-          reject(new Error(`Command failed: ${error.message}\nStderr: ${stderr}`));
+          // Provide more helpful error messages
+          let errorMsg = `Command failed: ${actualCommand}`;
+          if (stderr) errorMsg += `\nError: ${stderr}`;
+          if (error.message) errorMsg += `\nDetails: ${error.message}`;
+          reject(new Error(errorMsg));
         } else {
           resolve(stdout.trim());
         }
@@ -200,13 +308,16 @@ export class TerminalService extends EventEmitter {
     nodeVersion: string;
     cwd: string;
     env: Record<string, string>;
+    isTermux?: boolean;
   }> {
+    const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
     return {
       platform: process.platform,
       arch: process.arch,
       nodeVersion: process.version,
       cwd: process.cwd(),
       env: process.env,
+      isTermux,
     };
   }
 
@@ -229,16 +340,22 @@ export class TerminalService extends EventEmitter {
       'gcc', 'g++', 'make', 'cmake', 'docker', 'docker-compose',
       'kubectl', 'helm', 'terraform', 'aws', 'az', 'gcloud',
       'curl', 'wget', 'tar', 'zip', 'unzip', 'ssh', 'scp',
-      'rsync', 'vim', 'nano', 'emacs', 'code', 'subl'
+      'rsync', 'vim', 'nano', 'emacs', 'code', 'subl',
+      'ls', 'la', 'll', 'cat', 'grep', 'find', 'touch', 'mkdir',
+      'rm', 'cp', 'mv', 'pwd', 'cd', 'echo', 'head', 'tail',
+      'termux-info', 'env-info'
     ];
 
     const available: string[] = [];
     
-    for (const command of commonCommands) {
-      if (await this.checkCommandExists(command)) {
-        available.push(command);
+          for (const command of commonCommands) {
+        // For aliases and special commands, we just add them directly since they're handled in executeCommand
+        if (command === 'la' || command === 'll' || command === 'termux-info' || command === 'env-info') {
+          available.push(command);
+        } else if (await this.checkCommandExists(command)) {
+          available.push(command);
+        }
       }
-    }
     
     return available;
   }

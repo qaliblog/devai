@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Brain, Play, Square, Clock, CheckCircle, XCircle, AlertCircle, Activity, Settings } from 'lucide-react';
 
 interface AgentTask {
@@ -30,12 +30,24 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [newTask, setNewTask] = useState('');
   const [selectedTaskType, setSelectedTaskType] = useState<'code' | 'command' | 'file' | 'analysis'>('code');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadAgentState();
     const interval = setInterval(loadAgentState, 2000); // Refresh every 2 seconds
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-scroll to bottom when new tasks are added
+  useEffect(() => {
+    if (agentState && scrollContainerRef.current) {
+      const scrollContainer = scrollContainerRef.current;
+      // Use requestAnimationFrame to ensure DOM has updated
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      });
+    }
+  }, [agentState?.taskHistory.length, agentState?.taskHistory]);
 
   const loadAgentState = async () => {
     try {
@@ -148,9 +160,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-background h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card flex-shrink-0">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Brain className="h-6 w-6 text-primary" />
@@ -187,12 +199,12 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Add Task */}
-      <div className="p-4 border-b border-border bg-card">
-        <div className="flex items-center space-x-2">
+      <div className="p-6 border-b border-border bg-card flex-shrink-0">
+        <div className="flex flex-col space-y-4">
           <select
             value={selectedTaskType}
             onChange={(e) => setSelectedTaskType(e.target.value as any)}
-            className="px-3 py-2 text-sm border border-border rounded bg-background"
+            className="px-4 py-3 text-base border-2 border-border rounded-lg bg-background"
           >
             <option value="code">Code Generation</option>
             <option value="command">Command Execution</option>
@@ -204,9 +216,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-3 py-2 text-sm border border-border rounded bg-background resize-none mobile-input agent-chat-textarea"
-            rows={1}
-            style={{ minHeight: 44, maxHeight: 120, overflow: 'auto' }}
+            className="flex-1 px-6 py-4 text-lg border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
+            rows={8}
+            style={{ minHeight: 200, maxHeight: 500, overflow: 'auto' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -218,16 +230,17 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
           <button
             onClick={handleAddTask}
             disabled={!newTask.trim()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
+            className="px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-lg font-medium flex items-center justify-center"
           >
-            Add Task
+            <Play className="h-5 w-5 mr-2" />
+            Execute Task
           </button>
         </div>
       </div>
 
       {/* Current Task */}
       {agentState.currentTask && (
-        <div className="p-4 border-b border-border bg-card">
+        <div className="p-4 border-b border-border bg-card flex-shrink-0">
           <h3 className="text-sm font-semibold mb-2">Current Task</h3>
           <div className="bg-accent/50 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
@@ -248,9 +261,22 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       )}
 
       {/* Task History */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
         <div className="p-4">
-          <h3 className="text-sm font-semibold mb-4">Task History</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold">Task History</h3>
+            <button
+              onClick={() => {
+                if (scrollContainerRef.current) {
+                  scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+                }
+              }}
+              className="text-xs px-2 py-1 bg-accent/50 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
+              title="Scroll to bottom"
+            >
+              ↓ Latest
+            </button>
+          </div>
           
           {agentState.taskHistory.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -287,14 +313,24 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   )}
                   
                   {task.result && task.status === 'completed' && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View Result
-                      </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
-                        {JSON.stringify(task.result, null, 2)}
-                      </pre>
-                    </details>
+                    <div className="mt-3">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
+                      <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                        {typeof task.result === 'string' ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                            {task.result}
+                          </pre>
+                        ) : task.result?.content ? (
+                          <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                            {task.result.content}
+                          </pre>
+                        ) : (
+                          <pre className="text-xs overflow-x-auto">
+                            {JSON.stringify(task.result, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
@@ -304,7 +340,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground border-t border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground border-t border-border bg-card flex-shrink-0">
         <span>{agentState.taskHistory.length} total tasks</span>
         <span>
           {agentState.taskHistory.filter(t => t.status === 'completed').length} completed,

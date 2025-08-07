@@ -115,9 +115,10 @@ export class OllamaProvider implements AIProvider {
 
   async checkConnection(): Promise<boolean> {
     try {
-      await axios.get(`${this.baseUrl}/api/tags`);
-      return true;
+      const response = await axios.get(`${this.baseUrl}/api/tags`, { timeout: 5000 });
+      return response.status === 200;
     } catch (error) {
+      console.error('Ollama connection failed:', error);
       return false;
     }
   }
@@ -404,10 +405,15 @@ export class GeminiProvider implements AIProvider {
 export class AIProviderManager {
   private providers: Map<string, AIProvider> = new Map();
   private currentProvider: string = 'ollama';
+  private fallbackProvider: string = 'mock';
 
   constructor() {
     // Initialize with Ollama as default
     this.providers.set('ollama', new OllamaProvider());
+    
+    // Add mock provider as fallback
+    const { mockAIProvider } = require('./mock-ai');
+    this.providers.set('mock', mockAIProvider);
   }
 
   addProvider(name: string, provider: AIProvider): void {
@@ -433,11 +439,27 @@ export class AIProviderManager {
   }
 
   async generateResponse(messages: AIMessage[], options: any = {}): Promise<AIResponse> {
-    const provider = this.getCurrentProvider();
-    if (!provider) {
+    let provider = this.getCurrentProvider();
+    
+    // Try primary provider first
+    if (provider) {
+      try {
+        const isConnected = await provider.checkConnection();
+        if (isConnected) {
+          return await provider.generateResponse(messages, options);
+        }
+      } catch (error) {
+        console.warn('Primary provider failed, falling back to mock:', error);
+      }
+    }
+    
+    // Fall back to mock provider
+    const fallbackProvider = this.providers.get(this.fallbackProvider);
+    if (!fallbackProvider) {
       throw new Error('No AI provider available');
     }
-    return provider.generateResponse(messages, options);
+    
+    return await fallbackProvider.generateResponse(messages, options);
   }
 
   async streamResponse(messages: AIMessage[], onChunk: (chunk: string) => void, options: any = {}): Promise<void> {
@@ -453,7 +475,12 @@ export class AIProviderManager {
     if (!provider) {
       return false;
     }
-    return provider.checkConnection();
+    try {
+      return await provider.checkConnection();
+    } catch (error) {
+      console.error('Provider connection check failed:', error);
+      return false;
+    }
   }
 
   async listModels(): Promise<string[]> {

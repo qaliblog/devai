@@ -117,6 +117,7 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
             : p
         ));
       } else {
+        const errorMsg = data.error || data.result?.stderr || 'Command failed';
         setProcesses(prev => prev.map(p =>
           p.id === processId
             ? {
@@ -124,13 +125,15 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
                 status: 'failed',
                 output: [
                   ...p.output,
-                  { type: 'stderr', data: data.result?.stderr || 'Command failed', timestamp: Date.now() },
+                  { type: 'stderr', data: errorMsg, timestamp: Date.now() },
+                  { type: 'stderr', data: 'Tip: Try "la" for ls -la, or check if the command exists', timestamp: Date.now() },
                 ],
               }
             : p
         ));
       }
     } catch (error: any) {
+      console.error('Terminal execution error:', error);
       setProcesses(prev => prev.map(p => 
         p.id === processId 
           ? {
@@ -138,7 +141,8 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
               status: 'failed',
               output: [
                 ...p.output,
-                { type: 'stderr', data: error.message || 'Command failed', timestamp: Date.now() },
+                { type: 'stderr', data: `Network/API Error: ${error.message || error}`, timestamp: Date.now() },
+                { type: 'stderr', data: 'Check if the development server is running', timestamp: Date.now() },
               ],
             }
           : p
@@ -325,9 +329,13 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
             value={currentCommand}
             onChange={(e) => setCurrentCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Enter command..."
+            placeholder="Enter command (try: la, ll, termux-info, env-info)..."
             className="flex-1 bg-transparent border-none outline-none text-foreground text-sm terminal-input"
             disabled={isExecuting}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
           />
           <button
             type="submit"

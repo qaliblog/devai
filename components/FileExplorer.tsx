@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Folder, File, FileText, Code, Image, Archive, Trash2, Edit, Copy, Download, Upload, Plus } from 'lucide-react';
+import { Folder, File, FileText, Code, Image, Archive, Trash2, Edit, Copy, Download, Upload, Plus, ArrowUp } from 'lucide-react';
 
 interface FileItem {
   name: string;
@@ -178,7 +178,7 @@ export default function FileExplorer({ workspaceId }: FileExplorerProps) {
           disabled={currentPath === '.'}
           title="Go up one directory"
         >
-          <Folder className="h-4 w-4" />
+          <ArrowUp className="h-4 w-4" />
           <span className="text-xs">Up</span>
         </button>
         <span className="text-xs text-muted-foreground">{currentPath}</span>
@@ -197,7 +197,7 @@ export default function FileExplorer({ workspaceId }: FileExplorerProps) {
             className="p-2 hover:bg-accent rounded disabled:opacity-50"
             title="Go Up"
           >
-            <Folder className="h-4 w-4" />
+            <ArrowUp className="h-4 w-4" />
           </button>
           
           <button
