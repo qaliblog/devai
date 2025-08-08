@@ -188,7 +188,7 @@ export class SSHService extends EventEmitter {
 
   async testConnection(host: string, port: number, username: string, password?: string, privateKey?: string): Promise<boolean> {
     try {
-      const sshArgs = [
+      const baseArgs = [
         '-o', 'StrictHostKeyChecking=no',
         '-o', 'UserKnownHostsFile=/dev/null',
         '-o', 'ConnectTimeout=10',
@@ -198,13 +198,19 @@ export class SSHService extends EventEmitter {
         'echo "Connection test successful"',
       ];
 
+      const args = [...baseArgs];
       if (privateKey) {
-        sshArgs.unshift('-i', privateKey);
+        args.unshift('-i', privateKey);
       }
 
+      // If password is provided, try using sshpass if available
+      const useSshpass = !!password;
+      const command = useSshpass ? 'sshpass' : 'ssh';
+      const finalArgs = useSshpass ? ['-p', password as string, 'ssh', ...args] : args;
+
       return new Promise((resolve) => {
-        const process = spawn('ssh', sshArgs, {
-          stdio: ['pipe', 'pipe', 'pipe'],
+        const process = spawn(command, finalArgs, {
+          stdio: ['ignore', 'pipe', 'pipe'],
         });
 
         let output = '';
@@ -231,22 +237,9 @@ export class SSHService extends EventEmitter {
         });
 
         process.on('error', (error) => {
-          console.error(`SSH test process error: ${error.message}`);
+          console.error(`SSH test process error: ${error instanceof Error ? error.message : String(error)}`);
           resolve(false);
         });
-
-        // Send password if provided
-        if (password) {
-          setTimeout(() => {
-            process.stdin?.write(password + '\n');
-          }, 1000);
-        }
-
-        // Timeout after 15 seconds
-        setTimeout(() => {
-          process.kill('SIGTERM');
-          resolve(false);
-        }, 15000);
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
