@@ -335,3 +335,6 @@ export class SSHService extends EventEmitter {
 }
 
 export const sshService = new SSHService();
+sshService.on('error', (payload: any) => {
+  console.error('SSHService error event:', payload);
+});
