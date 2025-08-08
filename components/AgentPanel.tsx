@@ -38,16 +38,15 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom when new tasks are added
-  useEffect(() => {
-    if (agentState && scrollContainerRef.current) {
-      const scrollContainer = scrollContainerRef.current;
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      });
-    }
-  }, [agentState?.taskHistory.length, agentState?.taskHistory]);
+  // Auto-scroll disabled to respect user position
+  // useEffect(() => {
+  //   if (agentState && scrollContainerRef.current) {
+  //     const scrollContainer = scrollContainerRef.current;
+  //     requestAnimationFrame(() => {
+  //       scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  //     });
+  //   }
+  // }, [agentState?.taskHistory.length, agentState?.taskHistory]);
 
   const loadAgentState = async () => {
     try {
