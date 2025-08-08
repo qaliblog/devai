@@ -29,7 +29,7 @@ export class OllamaProvider implements AIProvider {
   private baseUrl: string;
   private defaultModel: string;
 
-  constructor(baseUrl: string = 'http://localhost:11434', defaultModel: string = 'deepseek-coder') {
+  constructor(baseUrl: string = 'http://localhost:11434', defaultModel: string = 'deepseek-coder:6.7b') {
     this.baseUrl = baseUrl;
     this.defaultModel = defaultModel;
   }
@@ -410,7 +410,7 @@ export class AIProviderManager {
   constructor() {
     // Initialize with Ollama as default (configurable via env)
     const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-    const defaultModel = process.env.OLLAMA_MODEL || 'deepseek-coder';
+    const defaultModel = process.env.OLLAMA_MODEL || 'deepseek-coder:6.7b';
     this.providers.set('ollama', new OllamaProvider(baseUrl, defaultModel));
     
     // Add mock provider as fallback

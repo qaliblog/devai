@@ -43,7 +43,7 @@ DevAI is a Cursor-like coding agent that connects to Ollama with DeepSeek Coder 
    ollama serve
    
    # Pull DeepSeek Coder model
-   ollama pull deepseek-coder
+   ollama pull deepseek-coder:6.7b
    ```
 
 4. **Start the development server**
@@ -161,7 +161,7 @@ Create a `.env.local` file:
 ```env
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-coder
+OLLAMA_MODEL=deepseek-coder:6.7b
 
 # Development Settings
 NODE_ENV=development

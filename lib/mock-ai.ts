@@ -32,7 +32,7 @@ A poet waiting beneath the tries and whys.
 **To get full AI-powered code generation:**
 1. Install Ollama: \`curl -fsSL https://ollama.ai/install.sh | sh\`
 2. Start Ollama: \`ollama serve\`
-3. Pull a coding model: \`ollama pull deepseek-coder\`
+3. Pull a coding model: \`ollama pull deepseek-coder:6.7b\`
 
 **For now, here's a basic template:**
 \`\`\`javascript
@@ -94,7 +94,7 @@ function yourFunction() {
 
 **For comprehensive code analysis, you'll need:**
 1. Ollama running: \`ollama serve\`
-2. A coding model: \`ollama pull deepseek-coder\`
+2. A coding model: \`ollama pull deepseek-coder:6.7b\`
 
 **Manual analysis tips:**
 - Check for consistent formatting
@@ -125,9 +125,9 @@ function yourFunction() {
 **For detailed AI assistance:**
 1. Install Ollama: \`curl -fsSL https://ollama.ai/install.sh | sh\`
 2. Start it: \`ollama serve\`
-3. Pull a model: \`ollama pull deepseek-coder\`
-
-*This is a fallback response. Connect Ollama for intelligent answers.*`;
+3. Pull a model: \`ollama pull deepseek-coder:6.7b\`
+ 
+ *This is a fallback response. Connect Ollama for intelligent answers.*`;
     }
     
     // Default response
@@ -138,7 +138,7 @@ function yourFunction() {
 **To enable full AI capabilities:**
 1. Install Ollama: \`curl -fsSL https://ollama.ai/install.sh | sh\`
 2. Start Ollama: \`ollama serve\`
-3. Pull a model: \`ollama pull deepseek-coder\`
+3. Pull a model: \`ollama pull deepseek-coder:6.7b\`
 
 **What I can help with when Ollama is running:**
 - Code generation and refactoring

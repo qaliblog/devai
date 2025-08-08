@@ -202,7 +202,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama serve
 
 # Pull model
-ollama pull deepseek-coder
+ollama pull deepseek-coder:6.7b
 ```
 
 ## Common Commands
@@ -221,7 +221,7 @@ curl http://localhost:11434/api/tags
 ollama list
 
 # Pull a model
-ollama pull deepseek-coder
+ollama pull deepseek-coder:6.7b
 
 # Stop all processes
 pkill -f "next"
