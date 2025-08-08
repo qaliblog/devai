@@ -408,8 +408,10 @@ export class AIProviderManager {
   private fallbackProvider: string = 'mock';
 
   constructor() {
-    // Initialize with Ollama as default
-    this.providers.set('ollama', new OllamaProvider());
+    // Initialize with Ollama as default (configurable via env)
+    const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    const defaultModel = process.env.OLLAMA_MODEL || 'deepseek-coder';
+    this.providers.set('ollama', new OllamaProvider(baseUrl, defaultModel));
     
     // Add mock provider as fallback
     const { mockAIProvider } = require('./mock-ai');
