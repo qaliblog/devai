@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, exists });
 
       case 'current-directory':
-        const workspaceId = searchParams.get('workspaceId');
+        const workspaceId = searchParams.get('workspaceId') || undefined;
         const directory = await terminalService.getCurrentDirectory(workspaceId);
         return NextResponse.json({ success: true, directory });
 

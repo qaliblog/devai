@@ -112,11 +112,11 @@ export class TerminalService extends EventEmitter {
                         actualCommand.includes('||') || actualCommand.includes(';') ||
                         actualCommand.includes('`') || actualCommand.includes('$');
 
-      let spawnOptions = {
+      let spawnOptions: Parameters<typeof spawn>[2] = {
         cwd,
         env: { ...termuxEnv, ...options.env },
         shell: options.shell !== false || needsShell,
-        stdio: ['pipe', 'pipe', 'pipe'] as const,
+        stdio: ['pipe', 'pipe', 'pipe'],
       };
 
       // For Termux, always use shell to handle environment properly
@@ -195,10 +195,11 @@ export class TerminalService extends EventEmitter {
       childProcess.on('error', (error) => {
         const duration = Date.now() - startTime;
         this.processes.delete(processId);
+        const message = error instanceof Error ? error.message : String(error);
         reject({
           success: false,
           stdout,
-          stderr: error.message,
+          stderr: message,
           exitCode: -1,
           duration,
         });
@@ -252,12 +253,11 @@ export class TerminalService extends EventEmitter {
         };
       }
 
-      const execOptions = {
+      const execOptions: Parameters<typeof exec>[1] = {
         cwd: cwd || process.cwd(), 
         env,
         timeout: 30000, // 30 second timeout
-        shell: true, // Always use shell for compatibility
-        encoding: 'utf8' as const
+        encoding: 'utf8'
       };
 
       // For Termux, ensure we use the right shell
@@ -309,7 +309,7 @@ export class TerminalService extends EventEmitter {
     arch: string;
     nodeVersion: string;
     cwd: string;
-    env: Record<string, string>;
+    env: Record<string, string | undefined>;
     isTermux?: boolean;
   }> {
     const isTermux = process.env.PREFIX?.includes('/data/data/com.termux') || false;
@@ -400,11 +400,12 @@ export class TerminalService extends EventEmitter {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
+      const message = error instanceof Error ? error.message : String(error);
       
       return {
         success: false,
         stdout: '',
-        stderr: `SSH Error: ${error.message}`,
+        stderr: `SSH Error: ${message}`,
         exitCode: -1,
         duration,
         workspaceId: workspace.id,

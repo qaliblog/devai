@@ -58,7 +58,8 @@ export class SSHService extends EventEmitter {
       return id;
     } catch (error) {
       sshConnection.status = 'error';
-      this.emit('error', { connectionId: id, error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      this.emit('error', { connectionId: id, error: message });
       throw error;
     }
   }
@@ -142,7 +143,8 @@ export class SSHService extends EventEmitter {
 
         process.on('error', (error) => {
           sshCommand.exitCode = 1;
-          sshCommand.output = `SSH Error: ${error.message}\nConnection: ${connection.username}@${connection.host}:${connection.port}\nCommand: ${command}`;
+          const message = error instanceof Error ? error.message : String(error);
+          sshCommand.output = `SSH Error: ${message}\nConnection: ${connection.username}@${connection.host}:${connection.port}\nCommand: ${command}`;
           reject(error);
         });
 
@@ -165,7 +167,8 @@ export class SSHService extends EventEmitter {
         
       } catch (error) {
         sshCommand.exitCode = 1;
-        sshCommand.output = error.message;
+        const message = error instanceof Error ? error.message : String(error);
+        sshCommand.output = message;
         reject(error);
       }
     });
@@ -246,7 +249,8 @@ export class SSHService extends EventEmitter {
         }, 15000);
       });
     } catch (error) {
-      console.error(`SSH test connection error: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`SSH test connection error: ${message}`);
       return false;
     }
   }

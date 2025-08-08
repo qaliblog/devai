@@ -490,6 +490,14 @@ export class AIProviderManager {
     }
     return provider.listModels();
   }
+
+  // Added to satisfy API route status check
+  getStatus() {
+    return {
+      currentProvider: this.getCurrentProviderName(),
+      availableProviders: this.getAvailableProviders(),
+    };
+  }
 }
 
 // Global instance

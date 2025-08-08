@@ -35,7 +35,7 @@ export default function Editor({ workspaceId, fileToOpen, onFileOpened }: Editor
     }
   }, [fileToOpen, onFileOpened]);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
     
     // Add keyboard shortcuts
