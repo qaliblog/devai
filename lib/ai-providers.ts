@@ -188,8 +188,30 @@ export class OllamaProvider implements AIProvider {
 
   async checkConnection(): Promise<boolean> {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/tags`, { timeout: 5000 });
-      return response.status === 200;
+      const candidates: string[] = [];
+      const current = this.baseUrl.replace(/\/$/, '');
+      candidates.push(current);
+
+      // If pointing at localhost, also try Docker host and service name
+      if (/^http:\/\/localhost(?::\d+)?$/.test(current) || /^http:\/\/127\.0\.0\.1(?::\d+)?$/.test(current)) {
+        const port = (() => {
+          const m = current.match(/:(\d+)$/);
+          return m ? m[1] : '11434';
+        })();
+        candidates.push(`http://host.docker.internal:${port}`);
+        candidates.push(`http://ollama:${port}`);
+      }
+
+      for (const url of Array.from(new Set(candidates))) {
+        try {
+          const resp = await axios.get(`${url}/api/tags`, { timeout: 3000 });
+          if (resp.status === 200) {
+            this.baseUrl = url; // lock onto the working base URL
+            return true;
+          }
+        } catch {}
+      }
+      return false;
     } catch (error) {
       console.error('Ollama connection failed:', error);
       return false;
