@@ -37,7 +37,7 @@ export class OllamaService {
   private baseUrl: string;
   private model: string;
 
-  constructor(baseUrl: string = 'http://localhost:11434', model: string = 'deepseek-coder') {
+  constructor(baseUrl: string = 'http://localhost:11434', model: string = 'deepseek-coder:6.7b') {
     this.baseUrl = baseUrl;
     this.model = model;
   }

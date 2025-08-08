@@ -38,16 +38,15 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom when new tasks are added
-  useEffect(() => {
-    if (agentState && scrollContainerRef.current) {
-      const scrollContainer = scrollContainerRef.current;
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      });
-    }
-  }, [agentState?.taskHistory.length, agentState?.taskHistory]);
+  // Auto-scroll disabled to respect user position
+  // useEffect(() => {
+  //   if (agentState && scrollContainerRef.current) {
+  //     const scrollContainer = scrollContainerRef.current;
+  //     requestAnimationFrame(() => {
+  //       scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  //     });
+  //   }
+  // }, [agentState?.taskHistory.length, agentState?.taskHistory]);
 
   const loadAgentState = async () => {
     try {
@@ -160,13 +159,13 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background h-full overflow-hidden">
+    <div className="flex-1 flex flex-col bg-background h-full overflow-hidden min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card flex-shrink-0">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-card flex-shrink-0">
+        <div className="flex items-center space-x-3 sm:space-x-4">
           <div className="flex items-center space-x-2">
             <Brain className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold">AI Agent</h2>
+            <h2 className="text-base sm:text-lg font-semibold">AI Agent</h2>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -199,7 +198,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Add Task */}
-      <div className="p-4 border-b border-border bg-card flex-shrink-0">
+      <div className="p-3 sm:p-4 border-b border-border bg-card flex-shrink-0">
         <div className="flex flex-col space-y-4">
           <select
             value={selectedTaskType}
@@ -216,7 +215,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Describe what you want the agent to do..."
-            className="flex-1 px-4 py-3 text-base border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
+            className="flex-1 px-3 sm:px-4 py-3 text-base border-2 border-border rounded-lg bg-background resize-none mobile-input agent-chat-textarea"
             rows={4}
             style={{ minHeight: 120, maxHeight: 300, overflow: 'auto' }}
             onKeyDown={(e) => {
@@ -230,7 +229,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
           <button
             onClick={handleAddTask}
             disabled={!newTask.trim()}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-base font-medium flex items-center justify-center"
+            className="px-5 sm:px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 text-base font-medium flex items-center justify-center"
           >
             <Play className="h-5 w-5 mr-2" />
             Execute Task
@@ -240,17 +239,17 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Current Task */}
       {agentState.currentTask && (
-        <div className="p-4 border-b border-border bg-card flex-shrink-0">
+        <div className="p-3 sm:p-4 border-b border-border bg-card flex-shrink-0">
           <h3 className="text-sm font-semibold mb-2">Current Task</h3>
           <div className="bg-accent/50 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
               {getTaskIcon(agentState.currentTask.type)}
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium truncate">
                 {getTaskTypeLabel(agentState.currentTask.type)}
               </span>
               {getStatusIcon(agentState.currentTask.status)}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground break-words">
               {agentState.currentTask.description}
             </p>
             <div className="text-xs text-muted-foreground mt-2">
@@ -262,8 +261,8 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
 
       {/* Task History */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth min-h-0">
-        <div className="p-4 pt-16">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 pt-4 sm:pt-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h3 className="text-sm font-semibold">Task History</h3>
             <button
               onClick={() => {
@@ -290,9 +289,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   className="bg-card border border-border rounded-lg p-3"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 min-w-0">
                       {getTaskIcon(task.type)}
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium truncate">
                         {getTaskTypeLabel(task.type)}
                       </span>
                       {getStatusIcon(task.status)}
@@ -302,7 +301,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                     </span>
                   </div>
                   
-                  <p className="text-sm text-foreground mb-2">
+                                     <p className="text-sm text-foreground mb-2 break-words">
                     {task.description}
                   </p>
                   
@@ -315,7 +314,7 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
                   {task.result && task.status === 'completed' && (
                     <div className="mt-3">
                       <div className="text-xs font-medium text-muted-foreground mb-2">Response:</div>
-                      <div className="bg-muted/50 rounded-lg p-3 text-sm max-h-[480px] overflow-y-auto">
+                                             <div className="bg-muted/50 rounded-lg p-3 text-sm max-h-[360px] overflow-y-auto break-words">
                         {typeof task.result === 'string' ? (
                           <pre className="whitespace-pre-wrap font-sans leading-relaxed break-words">
                             {task.result}
@@ -344,9 +343,9 @@ export default function AgentPanel({ workspaceId }: AgentPanelProps) {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground border-t border-border bg-card flex-shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 text-xs text-muted-foreground border-t border-border bg-card flex-shrink-0">
         <span>{agentState.taskHistory.length} total tasks</span>
-        <span>
+        <span className="text-right">
           {agentState.taskHistory.filter(t => t.status === 'completed').length} completed,
           {agentState.taskHistory.filter(t => t.status === 'failed').length} failed
         </span>

@@ -145,7 +145,8 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
       }
     } catch (error) {
       console.error('Failed to add local workspace:', error);
-      setError(error.message || 'Failed to add workspace');
+      const message = error instanceof Error ? error.message : 'Failed to add workspace';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -194,7 +195,8 @@ export default function WorkspaceSelector({ onWorkspaceChange, className = '' }:
       }
     } catch (error) {
       console.error('Failed to add SSH workspace:', error);
-      setError(error.message || 'Failed to add workspace');
+      const message = error instanceof Error ? error.message : 'Failed to add workspace';
+      setError(message);
     } finally {
       setLoading(false);
     }

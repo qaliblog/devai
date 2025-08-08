@@ -30,7 +30,7 @@ echo "Creating .env.local..."
 cat > .env.local << EOF
 # Ollama Configuration
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-coder
+OLLAMA_MODEL=deepseek-coder:6.7b
 
 # Development Settings
 NODE_ENV=development

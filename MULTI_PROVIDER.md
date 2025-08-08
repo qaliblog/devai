@@ -19,7 +19,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama serve
 
 # Pull a model
-ollama pull deepseek-coder
+ollama pull deepseek-coder:6.7b
 ```
 
 ### 🔑 **OpenAI**
@@ -79,7 +79,7 @@ curl -X POST http://localhost:3000/api/ai-providers \
   -d '{
     "action": "add-ollama",
     "baseUrl": "http://localhost:11434",
-    "model": "deepseek-coder"
+    "model": "deepseek-coder:6.7b"
   }'
 ```
 
@@ -138,7 +138,7 @@ curl -X POST http://localhost:3000/api/ai-providers \
 {
   "name": "ollama",
   "baseUrl": "http://localhost:11434",
-  "defaultModel": "deepseek-coder"
+  "defaultModel": "deepseek-coder:6.7b"
 }
 ```
 
@@ -232,7 +232,7 @@ curl http://localhost:11434/api/tags
 ollama list
 
 # Pull a model if needed
-ollama pull deepseek-coder
+ollama pull deepseek-coder:6.7b
 ```
 
 ## Advanced Configuration

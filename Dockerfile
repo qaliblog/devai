@@ -8,7 +8,9 @@ WORKDIR /app
 RUN apk add --no-cache \
     curl \
     bash \
-    git
+    git \
+    openssh-client \
+    sshpass
 
 # Copy package files
 COPY package*.json ./

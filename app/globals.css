@@ -565,7 +565,7 @@
   }
 
   /* Agent panel specific mobile improvements */
-  .mobile-panel .flex-1 {
+  .mobile-panel > .flex-1 {
     min-height: 0;
     overflow: hidden;
   }

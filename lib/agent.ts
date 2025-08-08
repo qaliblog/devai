@@ -218,11 +218,12 @@ Respond with a JSON object containing:
 
   private async executeCodeTask(task: AgentTask): Promise<any> {
     const context = await this.buildContext();
-    
-    const messages: AIMessage[] = [
-      {
-        role: 'system',
-        content: `You are a coding assistant. Generate code based on the task description. Consider the current workspace structure and available tools.
+
+    const wantsCommandOnly = /first command|one command|single command|heredoc|touch app\.py/i.test(task.description);
+
+    const systemPrompt = wantsCommandOnly
+      ? `You are a command-only assistant. Output exactly ONE bash command, and nothing else. No markdown. Assume Linux bash at project root. Prefer idempotent commands. For writing multi-line files, use a single heredoc like: cat > file << 'EOF' ... EOF`
+      : `You are a coding assistant. Generate code based on the task description. Consider the current workspace structure and available tools.
 
 Workspace info: ${JSON.stringify(context.workspaceInfo)}
 Available commands: ${JSON.stringify(context.availableCommands)}
@@ -233,16 +234,15 @@ Generate code that is:
 3. Follows best practices
 4. Compatible with the current environment
 
-Respond with the code directly, no explanations unless specifically requested.`
-      },
-      {
-        role: 'user',
-        content: task.description
-      }
+Respond with the code directly, no explanations unless specifically requested.`;
+
+    const messages: AIMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: task.description }
     ];
 
-    const response = await aiProviderManager.generateResponse(messages);
-    return { generatedCode: response.content };
+    const response = await aiProviderManager.generateResponse(messages, wantsCommandOnly ? { max_tokens: 256 } : {});
+    return wantsCommandOnly ? { command: response.content.trim() } : { generatedCode: response.content };
   }
 
   private async executeCommandTask(task: AgentTask): Promise<CommandResult> {

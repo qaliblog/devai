@@ -111,9 +111,9 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
                 status: result.success ? 'completed' : 'failed',
                 output: [
                   ...p.output,
-                  { type: 'stdout', data: result.stdout, timestamp: Date.now() },
-                  ...(result.stderr ? [{ type: 'stderr', data: result.stderr, timestamp: Date.now() }] : []),
-                  { type: 'exit', data: `Process exited with code ${result.exitCode}`, timestamp: Date.now() },
+                  { type: 'stdout' as const, data: String(result.stdout ?? ''), timestamp: Date.now() },
+                  ...(result.stderr ? [{ type: 'stderr' as const, data: String(result.stderr), timestamp: Date.now() }] : []),
+                  { type: 'exit' as const, data: `Process exited with code ${result.exitCode}`, timestamp: Date.now() },
                 ],
               }
             : p
@@ -127,8 +127,8 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
                 status: 'failed',
                 output: [
                   ...p.output,
-                  { type: 'stderr', data: errorMsg, timestamp: Date.now() },
-                  { type: 'stderr', data: 'Tip: Try "la" for ls -la, or check if the command exists', timestamp: Date.now() },
+                  { type: 'stderr' as const, data: String(errorMsg), timestamp: Date.now() },
+                  { type: 'stderr' as const, data: 'Tip: Try "la" for ls -la, or check if the command exists', timestamp: Date.now() },
                 ],
               }
             : p
@@ -143,8 +143,8 @@ export default function TerminalPanel({ workspaceId }: TerminalPanelProps) {
               status: 'failed',
               output: [
                 ...p.output,
-                { type: 'stderr', data: `Network/API Error: ${error.message || error}`, timestamp: Date.now() },
-                { type: 'stderr', data: 'Check if the development server is running', timestamp: Date.now() },
+                { type: 'stderr' as const, data: `Network/API Error: ${String(error?.message ?? error)}`, timestamp: Date.now() },
+                { type: 'stderr' as const, data: 'Check if the development server is running', timestamp: Date.now() },
               ],
             }
           : p

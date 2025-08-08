@@ -339,7 +339,7 @@ export default function AISettings({ isOpen, onClose }: AISettingsProps) {
                       type="text"
                       value={newProvider.model}
                       onChange={(e) => setNewProvider({ ...newProvider, model: e.target.value })}
-                      placeholder="deepseek-coder"
+                      placeholder="deepseek-coder:6.7b"
                       className="w-full px-3 py-2 border border-border rounded bg-background"
                     />
                   </div>
